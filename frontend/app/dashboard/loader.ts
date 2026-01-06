@@ -12,20 +12,10 @@ import type { MatchMetrics } from "./page";
 // something completely different!
 // =============================================================================
 
-// =============================================================================
-// TYPES (Examples - define your own!)
-// =============================================================================
-
 export interface DashboardData {
   metrics: MatchMetrics;
-  // These are just example fields - add whatever your dashboard needs!
-  // recentMatches: Match[];
-  // analyticsData: AnalyticsData;
+  // Add whatever your dashboard needs!
 }
-
-// =============================================================================
-// DATA FETCHING
-// =============================================================================
 
 /**
  * Server-side data loader for the dashboard page.
@@ -36,23 +26,12 @@ export interface DashboardData {
  * - Query SurrealDB directly
  * - Call edge functions
  * - Access server-only resources
- *
- * The data shape returned here should match what YOUR dashboard needs,
- * not necessarily what's shown in this example.
  */
 export async function getDashboardData(): Promise<DashboardData> {
   // Simulate network delay for loading state demo
   await new Promise((resolve) => setTimeout(resolve, 500));
 
-  // TODO: Replace with actual database queries
-  // Example SurrealDB query structure:
-  //
-  // const db = await getSurrealClient();
-  // const [apples, oranges, matches] = await Promise.all([
-  //   db.query("SELECT count() FROM apples GROUP ALL"),
-  //   db.query("SELECT count() FROM oranges GROUP ALL"),
-  //   db.query("SELECT count() FROM matches GROUP ALL"),
-  // ]);
+  // TODO: Replace with actual SurrealDB or supabase queries
 
   const metrics: MatchMetrics = {
     totalApples: 0,
@@ -61,44 +40,5 @@ export async function getDashboardData(): Promise<DashboardData> {
     successRate: 0,
   };
 
-  return {
-    metrics,
-  };
+  return { metrics };
 }
-
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
-/**
- * TODO: Add your SurrealDB client initialization here
- *
- * Example:
- * ```ts
- * import Surreal from "surrealdb.js";
- *
- * export async function getSurrealClient() {
- *   const db = new Surreal();
- *   await db.connect("http://localhost:8000/rpc");
- *   await db.use({ namespace: "matchmaking", database: "main" });
- *   return db;
- * }
- * ```
- */
-
-/**
- * TODO: Add functions to query specific data
- *
- * Example:
- * ```ts
- * export async function getRecentMatches(limit = 10) {
- *   const db = await getSurrealClient();
- *   return db.query(`
- *     SELECT * FROM matches
- *     ORDER BY created_at DESC
- *     LIMIT $limit
- *   `, { limit });
- * }
- * ```
- */
-
