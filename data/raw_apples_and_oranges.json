@@ -1,0 +1,675 @@
+[
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 7.2,
+      "weight": 185,
+      "hasStem": true,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 5, "max": 12 },
+      "hasWorm": false,
+      "shineFactor": ["shiny", "extraShiny"]
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 4.1,
+      "weight": 120,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": true,
+      "shineFactor": "dull",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "weight": { "min": 100, "max": 200 },
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 9.8,
+      "weight": 245,
+      "hasStem": true,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 8 },
+      "hasStem": true,
+      "hasLeaf": true,
+      "shineFactor": "extraShiny"
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 5.5,
+      "weight": null,
+      "hasStem": true,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": null
+    },
+    "preferences": {
+      "hasWorm": false,
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 6.3,
+      "weight": 167,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "size": { "min": 4, "max": 8 },
+      "weight": { "max": 200 },
+      "shineFactor": ["neutral", "shiny"]
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 11.2,
+      "weight": 310,
+      "hasStem": true,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 10 },
+      "weight": { "min": 250 },
+      "hasWorm": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 3.2,
+      "weight": 89,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": true,
+      "shineFactor": "dull",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "weight": { "max": 150 }
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 8.1,
+      "weight": 198,
+      "hasStem": true,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "hasStem": true,
+      "hasLeaf": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": null,
+      "weight": 155,
+      "hasStem": true,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 5, "max": 10 },
+      "hasWorm": false,
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 7.7,
+      "weight": 201,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "weight": { "min": 150, "max": 250 },
+      "shineFactor": ["shiny", "extraShiny"],
+      "hasWorm": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 5.9,
+      "weight": 142,
+      "hasStem": true,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "max": 8 },
+      "hasStem": true
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 10.4,
+      "weight": 278,
+      "hasStem": true,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 9 },
+      "hasLeaf": true,
+      "shineFactor": "extraShiny"
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 4.8,
+      "weight": 115,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": true,
+      "shineFactor": "dull",
+      "hasChemicals": null
+    },
+    "preferences": {
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 6.6,
+      "weight": 178,
+      "hasStem": true,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 5, "max": 9 },
+      "weight": { "min": 140, "max": 220 },
+      "hasWorm": false,
+      "shineFactor": "shiny"
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 8.9,
+      "weight": 223,
+      "hasStem": true,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "hasStem": true,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 3.9,
+      "weight": 95,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "size": { "max": 6 },
+      "weight": { "max": 120 }
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 7.4,
+      "weight": 189,
+      "hasStem": true,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "shineFactor": ["neutral", "shiny", "extraShiny"],
+      "hasWorm": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 9.1,
+      "weight": null,
+      "hasStem": true,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 7 },
+      "hasLeaf": true,
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 5.2,
+      "weight": 134,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": true,
+      "shineFactor": "dull",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "weight": { "min": 100, "max": 180 },
+      "hasWorm": false
+    }
+  },
+  {
+    "type": "apple",
+    "attributes": {
+      "size": 6.8,
+      "weight": 172,
+      "hasStem": true,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 5, "max": 10 },
+      "hasStem": true,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 8.5,
+      "weight": 215,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 6, "max": 10 },
+      "hasWorm": false,
+      "shineFactor": ["shiny", "extraShiny"]
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 6.2,
+      "weight": 158,
+      "hasStem": false,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "weight": { "min": 120, "max": 200 },
+      "hasLeaf": true,
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 10.1,
+      "weight": 267,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 8 },
+      "shineFactor": "extraShiny",
+      "hasWorm": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 4.7,
+      "weight": 112,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": true,
+      "shineFactor": "dull",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "hasChemicals": false,
+      "hasWorm": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 7.3,
+      "weight": 183,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 5, "max": 9 },
+      "hasStem": true,
+      "shineFactor": ["neutral", "shiny"]
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 9.4,
+      "weight": 241,
+      "hasStem": false,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 7 },
+      "weight": { "min": 180 },
+      "hasLeaf": true,
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 5.6,
+      "weight": null,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "weight": { "max": 180 },
+      "hasWorm": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 8.8,
+      "weight": 228,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "size": { "min": 6, "max": 11 },
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 3.8,
+      "weight": 87,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": true,
+      "shineFactor": "dull",
+      "hasChemicals": null
+    },
+    "preferences": {
+      "size": { "max": 6 }
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 7.9,
+      "weight": 196,
+      "hasStem": false,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "hasStem": true,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": ["shiny", "extraShiny"]
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": null,
+      "weight": 165,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "weight": { "min": 130, "max": 210 },
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 6.9,
+      "weight": 176,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 5, "max": 8 },
+      "hasStem": true,
+      "shineFactor": "shiny"
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 11.5,
+      "weight": 298,
+      "hasStem": false,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 9 },
+      "weight": { "min": 220 },
+      "hasLeaf": true,
+      "shineFactor": "extraShiny"
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 5.1,
+      "weight": 128,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "hasWorm": false,
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 8.2,
+      "weight": 209,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 6, "max": 10 },
+      "weight": { "min": 150, "max": 240 },
+      "shineFactor": ["neutral", "shiny", "extraShiny"]
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 4.3,
+      "weight": 103,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": true,
+      "shineFactor": "dull",
+      "hasChemicals": true
+    },
+    "preferences": {
+      "weight": { "max": 150 },
+      "hasWorm": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 7.6,
+      "weight": 191,
+      "hasStem": false,
+      "hasLeaf": true,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "hasStem": true,
+      "hasLeaf": true,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 9.7,
+      "weight": 253,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "extraShiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "size": { "min": 8, "max": 12 },
+      "hasWorm": false,
+      "hasChemicals": false
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 6.4,
+      "weight": 162,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "neutral",
+      "hasChemicals": null
+    },
+    "preferences": {
+      "size": { "min": 4, "max": 8 },
+      "weight": { "min": 120, "max": 200 }
+    }
+  },
+  {
+    "type": "orange",
+    "attributes": {
+      "size": 8.0,
+      "weight": 204,
+      "hasStem": false,
+      "hasLeaf": false,
+      "hasWorm": false,
+      "shineFactor": "shiny",
+      "hasChemicals": false
+    },
+    "preferences": {
+      "hasStem": true,
+      "hasWorm": false,
+      "shineFactor": ["shiny", "extraShiny"],
+      "hasChemicals": false
+    }
+  }
+]
+

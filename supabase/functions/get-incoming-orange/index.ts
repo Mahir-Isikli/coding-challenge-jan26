@@ -1,5 +1,6 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "@supabase/functions-js/edge-runtime.d.ts";
+import { generateOrange, communicateAttributes, communicatePreferences } from "../_shared/generateFruit.ts";
 
 /**
  * Get Incoming Orange Edge Function
@@ -27,16 +28,21 @@ Deno.serve(async (req) => {
 
   try {
     // Step 1: Generate a new orange instance
-    // TODO: Implement orange generation logic (possibly via LLM)
+    const orange = generateOrange();
 
     // Step 2: Capture the orange's communication
     // The orange expresses its attributes and preferences
+    const orangeAttrs = communicateAttributes(orange);
+    const orangePrefs = communicatePreferences(orange);
 
     // Step 3: Store the new orange in SurrealDB
+    // TODO: Implement orange storage logic
 
     // Step 4: Match the new orange to existing apples
+    // TODO: Implement orange matching logic
 
     // Step 5: Communicate matching results via LLM
+    // TODO: Implement matching results communication logic
 
     return new Response(JSON.stringify({ message: "Orange received" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
