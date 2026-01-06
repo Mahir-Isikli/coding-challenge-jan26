@@ -1,0 +1,16 @@
+{
+  "name": "coding-challenge-jan26",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Matchmaking system - apples and oranges",
+  "scripts": {
+    "supabase": "supabase",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:functions:serve": "supabase functions serve"
+  },
+  "devDependencies": {
+    "supabase": "^2.23.4"
+  }
+}
+
