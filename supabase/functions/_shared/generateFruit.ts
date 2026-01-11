@@ -39,6 +39,7 @@ export interface FruitPreferences {
 
 export interface Fruit {
   type: FruitType;
+  name: string;
   attributes: FruitAttributes;
   preferences: FruitPreferences;
 }
@@ -62,6 +63,27 @@ const WEIGHT_MAX = 350;
 
 // Probability of each attribute being null (unknown)
 const NULL_PROBABILITY = 0.05;
+
+// Name pools for fruits (variety-inspired and fun names)
+const APPLE_NAMES = [
+  "Gala", "Fuji", "Honeycrisp", "Braeburn", "Pippin", "Granny", "Macintosh", "Jonagold",
+  "Cortland", "Ambrosia", "Crispin", "Empire", "Jazz", "Envy", "Opal", "Aurora",
+  "Pink Lady", "Cosmic", "Snapple", "Liberty", "Fortune", "Autumn", "Sunrise", "Golden",
+  "Ruby", "Scarlet", "Rosie", "Blossom", "Orchard", "Newton", "Cider", "Bramley",
+  "Spencer", "Baldwin", "Rome", "Winesap", "Cameo", "Kiku", "Smitten", "Rave",
+  "Sweetie", "Kanzi", "Rockit", "Pazazz", "Sugar Bee", "Evercrisp", "Juici", "Ludacrisp",
+  "Crimson", "Zestar"
+];
+
+const ORANGE_NAMES = [
+  "Valencia", "Navel", "Clementine", "Tangerine", "Satsuma", "Cara Cara", "Mandarin", "Seville",
+  "Jaffa", "Moro", "Sunny", "Zesty", "Marmalade", "Tang", "Julius", "Florida",
+  "Rio", "Coral", "Amber", "Goldie", "Blaze", "Sunset", "Tropicana", "Citrus",
+  "Bergamot", "Kumquat", "Pixie", "Murcott", "Minneola", "Tangelo", "Hamlin", "Pera",
+  "Salustiana", "Shamouti", "Midknight", "Delta", "Trovita", "Parson", "Pineapple", "Temple",
+  "Sunburst", "Dancy", "Honey", "Page", "Fairchild", "Fremont", "Nova", "Orlando",
+  "Lee", "Fallglo"
+];
 
 // ============================================================================
 // Random Utilities
@@ -778,37 +800,83 @@ export function communicatePreferences(fruit: Fruit): string {
 }
 
 // ============================================================================
+// Name Generation (DB-backed uniqueness)
+// ============================================================================
+
+interface DBClient {
+  query<T>(sql: string): Promise<T[]>;
+}
+
+/**
+ * Generates a unique name for a fruit by checking existing names in the database.
+ * Falls back to Name-XX suffix if all base names are taken.
+ */
+export async function generateUniqueName(type: FruitType, db: DBClient): Promise<string> {
+  const namePool = type === "apple" ? APPLE_NAMES : ORANGE_NAMES;
+  
+  // Query existing names of this fruit type from the database
+  const existingResult = await db.query<Array<{ name: string }[]>>(`
+    SELECT name FROM fruit WHERE type = "${type}" AND name != NONE;
+  `);
+  const existingNames = new Set((existingResult[0] || []).map(r => r.name));
+  
+  // Find available names from the pool
+  const availableNames = namePool.filter(name => !existingNames.has(name));
+  
+  if (availableNames.length > 0) {
+    // Pick a random available name
+    return randomPick(availableNames);
+  }
+  
+  // All base names taken - generate with suffix
+  const baseName = randomPick(namePool);
+  let suffix = Math.floor(Math.random() * 100);
+  let candidateName = `${baseName}-${suffix.toString().padStart(2, "0")}`;
+  
+  // Keep trying until we find a unique one
+  while (existingNames.has(candidateName)) {
+    suffix = Math.floor(Math.random() * 1000);
+    candidateName = `${baseName}-${suffix.toString().padStart(3, "0")}`;
+  }
+  
+  return candidateName;
+}
+
+// ============================================================================
 // Main Export
 // ============================================================================
 
 /**
- * Generates a random fruit of the specified type
+ * Generates a random fruit of the specified type with a unique name
  *
  * @param type - The type of fruit to generate ("apple" or "orange")
- * @returns A randomly generated fruit with attributes and preferences
+ * @param db - Database client for checking name uniqueness
+ * @returns A randomly generated fruit with attributes, preferences, and unique name
  */
-export function generateFruit(type: FruitType): Fruit {
+export async function generateFruit(type: FruitType, db: DBClient): Promise<Fruit> {
   const attributes = generateAttributes(type);
   const preferences = generatePreferences(attributes);
+  const name = await generateUniqueName(type, db);
 
   return {
     type,
+    name,
     attributes,
     preferences,
   };
 }
 
 /**
- * Generates a random apple
+ * Generates a random apple with a unique name
  */
-export function generateApple(): Fruit {
-  return generateFruit("apple");
+export async function generateApple(db: DBClient): Promise<Fruit> {
+  return generateFruit("apple", db);
 }
 
 /**
- * Generates a random orange
+ * Generates a random orange with a unique name
  */
-export function generateOrange(): Fruit {
-  return generateFruit("orange");
+export async function generateOrange(db: DBClient): Promise<Fruit> {
+  return generateFruit("orange", db);
 }
 

@@ -20,7 +20,9 @@ export interface Orange {
 export interface Match {
   id: string;
   appleId: string;
+  appleName?: string;
   orangeId: string;
+  orangeName?: string;
   score: number;
   status: "pending" | "confirmed" | "rejected";
   createdAt: Date;

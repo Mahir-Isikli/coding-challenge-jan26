@@ -11,15 +11,15 @@ export default function MatchmakingPage() {
   useRealtimeMatches();
 
   return (
-    <main className="max-w-7xl mx-auto px-6 pt-4 pb-20">
-      <div className="grid grid-cols-3 gap-6 h-[calc(100vh-180px)]">
+    <main className="max-w-[1600px] mx-auto px-6 pt-4 pb-20">
+      <div className="grid grid-cols-4 gap-6 h-[calc(100vh-180px)]">
         {/* Left: Apple Chat */}
         <div className="min-h-0">
           <AppleChat />
         </div>
 
-        {/* Center: Match Network Graph */}
-        <div className="min-h-0">
+        {/* Center: Match Network Graph (wider - 2 columns) */}
+        <div className="min-h-0 col-span-2">
           <Card className="h-full flex flex-col overflow-hidden py-0 gap-0">
             <CardHeader className="px-4 py-3 flex items-center justify-center border-b flex-shrink-0">
               <CardTitle className="text-sm text-center">Match Network</CardTitle>
@@ -27,7 +27,7 @@ export default function MatchmakingPage() {
             <CardContent className="flex-1 min-h-0 p-0">
               <MatchGraph />
             </CardContent>
-            <CardFooter className="px-4 py-4 justify-center border-t flex-shrink-0">
+            <CardFooter className="px-4 py-3 justify-center border-t flex-shrink-0">
               <MatchGraphLegend />
             </CardFooter>
           </Card>
