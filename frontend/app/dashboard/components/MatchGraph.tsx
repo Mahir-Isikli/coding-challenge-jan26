@@ -297,7 +297,7 @@ export function MatchGraph() {
         border-radius: 10px;
         min-width: 200px;
         max-width: 320px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        box-shadow: none;
         font-family: system-ui, -apple-system, sans-serif;
       ">
         <div style="
@@ -355,7 +355,7 @@ export function MatchGraph() {
     <div className="h-full w-full flex flex-col">
       {/* Zoom Controls */}
       <div className="flex justify-center py-2 border-b flex-shrink-0">
-        <div className="inline-flex items-center rounded-md border bg-background shadow-xs">
+        <div className="inline-flex items-center rounded-md border bg-background">
           <Button
             variant="ghost"
             size="icon-sm"

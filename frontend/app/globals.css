@@ -7,7 +7,7 @@
    ============================================================================= */
 
 :root {
-  --color-bg: #ffffff;
+  --color-bg: #f8f9fa;
   --color-bg-subtle: #fafafa;
   --color-bg-muted: #f5f5f5;
   --color-border: #e5e5e5;
@@ -30,7 +30,7 @@
   --radius-md: 2px;
   --radius-lg: 2px;
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: oklch(0.98 0.003 240);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
