@@ -1,12 +1,15 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, type MutableRefObject } from 'react';
+import { Button } from '@/components/ui/button';
+import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
+// Graph data types
 interface GraphNode {
-  id: string;
+  id?: string | number;
   type: 'apple' | 'orange';
   name: string;
   x?: number;
@@ -14,10 +17,9 @@ interface GraphNode {
 }
 
 interface GraphLink {
-  source: string | GraphNode;
-  target: string | GraphNode;
+  source?: string | number | GraphNode;
+  target?: string | number | GraphNode;
   score: number;
-  id: string;
 }
 
 interface GraphData {
@@ -25,11 +27,19 @@ interface GraphData {
   links: GraphLink[];
 }
 
+// Instance methods we need from the graph
+interface ForceGraphInstance {
+  zoomToFit(ms?: number, padding?: number): void;
+  zoom(level: number, ms?: number): void;
+  centerAt(x?: number, y?: number, ms?: number): void;
+}
+
 export function MatchGraph() {
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 250 });
+  const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<ForceGraphInstance>();
 
   const fetchData = useCallback(async () => {
     try {
@@ -45,7 +55,6 @@ export function MatchGraph() {
 
   useEffect(() => {
     fetchData();
-    // No auto-refresh - graph stays stable until page reload
   }, [fetchData]);
 
   useEffect(() => {
@@ -60,11 +69,9 @@ export function MatchGraph() {
       }
     };
     
-    // Initial update after a short delay to let layout settle
     const timeout = setTimeout(updateDimensions, 100);
     const timeout2 = setTimeout(updateDimensions, 500);
     
-    // Use ResizeObserver for responsive updates
     const resizeObserver = new ResizeObserver(updateDimensions);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
@@ -79,41 +86,51 @@ export function MatchGraph() {
     };
   }, [loading]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const nodeColor = useCallback((node: any) => {
+  const handleZoomIn = useCallback(() => {
+    graphRef.current?.zoom(2, 300);
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    graphRef.current?.zoom(0.5, 300);
+  }, []);
+
+  const handleFit = useCallback(() => {
+    graphRef.current?.zoomToFit(400, 40);
+  }, []);
+
+  const handleEngineStop = useCallback(() => {
+    graphRef.current?.zoomToFit(400, 40);
+  }, []);
+
+  const nodeColor = useCallback((node: GraphNode) => {
     return node.type === 'apple' ? '#ef4444' : '#f97316';
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const nodeCanvasObject = useCallback((node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.type === 'apple' ? '🍏' : '🍊';
     const fontSize = 16 / globalScale;
     ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(label, node.x || 0, node.y || 0);
+    ctx.fillText(label, node.x ?? 0, node.y ?? 0);
   }, []);
 
-  // Draw percentage labels on links
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const linkCanvasObject = useCallback((link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const start = link.source;
-    const end = link.target;
-    if (typeof start !== 'object' || typeof end !== 'object') return;
+  const linkCanvasObject = useCallback((link: GraphLink, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const start = link.source as GraphNode | undefined;
+    const end = link.target as GraphNode | undefined;
+    if (!start || !end || typeof start !== 'object' || typeof end !== 'object') return;
     
-    // Draw the line
-    const score = link.score || 0.5;
+    const score = link.score ?? 0.5;
     const alpha = 0.3 + score * 0.5;
     ctx.strokeStyle = `rgba(120, 120, 120, ${alpha})`;
     ctx.lineWidth = 1 / globalScale;
     ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
+    ctx.moveTo(start.x ?? 0, start.y ?? 0);
+    ctx.lineTo(end.x ?? 0, end.y ?? 0);
     ctx.stroke();
     
-    // Draw percentage label at midpoint
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2;
+    const midX = ((start.x ?? 0) + (end.x ?? 0)) / 2;
+    const midY = ((start.y ?? 0) + (end.y ?? 0)) / 2;
     const label = `${Math.round(score * 100)}%`;
     const fontSize = 9 / globalScale;
     ctx.font = `${fontSize}px sans-serif`;
@@ -121,6 +138,10 @@ export function MatchGraph() {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = `rgba(100, 100, 100, ${0.5 + score * 0.4})`;
     ctx.fillText(label, midX, midY);
+  }, []);
+
+  const nodeLabel = useCallback((node: GraphNode) => {
+    return `${node.type}: ${(node.name ?? '').slice(0, 100)}`;
   }, []);
 
   if (loading) {
@@ -131,10 +152,6 @@ export function MatchGraph() {
     );
   }
 
-  const appleCount = data.nodes.filter(n => n.type === 'apple').length;
-  const orangeCount = data.nodes.filter(n => n.type === 'orange').length;
-  const matchCount = data.links.length;
-
   if (data.nodes.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-tertiary text-sm">
@@ -144,21 +161,60 @@ export function MatchGraph() {
   }
 
   return (
-    <div ref={containerRef} className="h-full w-full">
-      <ForceGraph2D
-        graphData={data}
-        width={dimensions.width}
-        height={dimensions.height}
-        nodeCanvasObject={nodeCanvasObject}
-        nodeColor={nodeColor}
-        nodeRelSize={8}
-        linkCanvasObject={linkCanvasObject}
-        linkCanvasObjectMode={() => 'replace'}
-        backgroundColor="transparent"
-        cooldownTicks={100}
-        onNodeClick={(node) => console.log('Clicked node:', node)}
-        nodeLabel={(node) => `${(node as GraphNode).type}: ${((node as GraphNode).name || '').slice(0, 100)}`}
-      />
+    <div className="h-full w-full flex flex-col">
+      {/* Zoom Controls */}
+      <div className="flex justify-center py-2 border-b flex-shrink-0">
+        <div className="inline-flex items-center rounded-md border bg-background shadow-xs">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleZoomOut}
+            className="rounded-r-none border-r"
+            title="Zoom Out"
+          >
+            <ZoomOut className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleFit}
+            className="rounded-none border-r"
+            title="Fit to View"
+          >
+            <Maximize2 className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleZoomIn}
+            className="rounded-l-none"
+            title="Zoom In"
+          >
+            <ZoomIn className="size-4" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Graph Container */}
+      <div ref={containerRef} className="flex-1 min-h-0">
+        <ForceGraph2D
+          ref={graphRef as MutableRefObject<ForceGraphInstance | undefined>}
+          graphData={data}
+          width={dimensions.width}
+          height={dimensions.height}
+          nodeCanvasObject={nodeCanvasObject}
+          nodeColor={nodeColor}
+          nodeRelSize={8}
+          linkCanvasObject={linkCanvasObject}
+          linkCanvasObjectMode={() => 'replace'}
+          backgroundColor="transparent"
+          cooldownTicks={100}
+          onEngineStop={handleEngineStop}
+          onNodeClick={(node: GraphNode) => console.log('Clicked node:', node)}
+          nodeLabel={nodeLabel}
+          d3VelocityDecay={0.3}
+        />
+      </div>
     </div>
   );
 }
@@ -170,10 +226,10 @@ export function MatchGraphLegend() {
     const fetchCounts = async () => {
       try {
         const res = await fetch('/api/graph');
-        const json = await res.json();
+        const json = await res.json() as GraphData;
         setCounts({
-          apples: json.nodes.filter((n: GraphNode) => n.type === 'apple').length,
-          oranges: json.nodes.filter((n: GraphNode) => n.type === 'orange').length,
+          apples: json.nodes.filter((n) => n.type === 'apple').length,
+          oranges: json.nodes.filter((n) => n.type === 'orange').length,
           matches: json.links.length,
         });
       } catch (error) {
@@ -184,18 +240,27 @@ export function MatchGraphLegend() {
   }, []);
 
   return (
-    <div className="flex items-center justify-evenly text-base text-muted-foreground w-full">
-      <div className="flex items-center gap-1.5">
-        <span className="text-xl">🍏</span>
-        <span>{counts.apples}</span>
+    <div className="flex items-center justify-evenly text-sm text-muted-foreground w-full gap-6">
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-lg">🍏</span>
+          <span className="font-semibold text-foreground">{counts.apples}</span>
+        </div>
+        <span className="text-xs text-center opacity-70">seeking their zest</span>
       </div>
-      <div className="flex items-center gap-1.5">
-        <span className="text-xl">🍊</span>
-        <span>{counts.oranges}</span>
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-lg">🍊</span>
+          <span className="font-semibold text-foreground">{counts.oranges}</span>
+        </div>
+        <span className="text-xs text-center opacity-70">looking for shine</span>
       </div>
-      <div className="flex items-center gap-1.5">
-        <span className="text-xl">💑</span>
-        <span>{counts.matches}</span>
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-lg">🍐</span>
+          <span className="font-semibold text-foreground">{counts.matches}</span>
+        </div>
+        <span className="text-xs text-center opacity-70">perfect pears</span>
       </div>
     </div>
   );
