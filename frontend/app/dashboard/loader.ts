@@ -1,5 +1,52 @@
 import { fetchMetrics } from "@/lib/api";
 
+interface PreferenceSatisfaction {
+  score: number;
+  satisfied: string[];
+  violated: string[];
+}
+
+interface MatchBreakdown {
+  appleToOrange: PreferenceSatisfaction;
+  orangeToApple: PreferenceSatisfaction;
+}
+
+interface FruitMatchInfo {
+  matchId: string;
+  partnerId: string;
+  partnerName?: string;
+  score: number;
+  breakdown: {
+    myPrefsScore?: number;
+    theirPrefsScore?: number;
+    myPrefsSatisfied?: string[];
+    myPrefsViolated?: string[];
+    theirPrefsSatisfied?: string[];
+    theirPrefsViolated?: string[];
+  };
+  matchedAt?: string;
+}
+
+interface FruitAttributes {
+  size?: number | null;
+  weight?: number | null;
+  hasStem?: boolean | null;
+  hasLeaf?: boolean | null;
+  hasWorm?: boolean | null;
+  shineFactor?: string | null;
+  hasChemicals?: boolean | null;
+}
+
+export interface FruitBreakdownItem {
+  id: string;
+  type: string;
+  name: string;
+  attributes?: FruitAttributes;
+  matchCount: number;
+  bestMatch: FruitMatchInfo | null;
+  runnerUps: FruitMatchInfo[];
+}
+
 export interface DashboardData {
   metrics: {
     totalApples: number;
@@ -22,7 +69,12 @@ export interface DashboardData {
     orangeName?: string;
     score: number;
     matchedAt: string;
+    breakdown: MatchBreakdown;
   }>;
+  fruitBreakdown: {
+    apples: FruitBreakdownItem[];
+    oranges: FruitBreakdownItem[];
+  };
 }
 
 /**
@@ -36,6 +88,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       metrics: data.metrics,
       scoreDistribution: data.scoreDistribution,
       recentMatches: data.recentMatches,
+      fruitBreakdown: data.fruitBreakdown,
     };
   } catch (error) {
     console.error("Failed to fetch dashboard data:", error);
@@ -55,6 +108,10 @@ export async function getDashboardData(): Promise<DashboardData> {
         low: 0,
       },
       recentMatches: [],
+      fruitBreakdown: {
+        apples: [],
+        oranges: [],
+      },
     };
   }
 }

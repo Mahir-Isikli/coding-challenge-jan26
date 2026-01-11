@@ -7,11 +7,15 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const maxDuration = 60;
 
+interface PreferenceSatisfaction {
+  score: number;
+  satisfied: string[];
+  violated: string[];
+}
+
 interface MatchBreakdown {
-  preference: number;
-  embedding: number;
-  orangeToApple: { score: number; satisfied: string[]; violated: string[] };
-  appleToOrange: { score: number; satisfied: string[]; violated: string[] };
+  orangeToApple: PreferenceSatisfaction;
+  appleToOrange: PreferenceSatisfaction;
 }
 
 interface RankedCandidate {
@@ -19,7 +23,7 @@ interface RankedCandidate {
   appleId: string;
   appleName: string;
   score: number;
-  breakdown: { preference: number; embedding: number };
+  breakdown: MatchBreakdown;
 }
 
 interface EdgeFunctionResponse {
@@ -39,6 +43,7 @@ interface EdgeFunctionResponse {
     breakdown: MatchBreakdown;
   } | null;
   rankedCandidates: RankedCandidate[];
+  otherOrangesForApple: { orangeId: string; orangeName: string; score: number }[];
 }
 
 export async function POST() {
@@ -65,7 +70,7 @@ export async function POST() {
 
     // 3. Stream the LLM response
     const result = streamText({
-      model: anthropic('claude-sonnet-4-20250514'),
+      model: anthropic('claude-sonnet-4-5-20250929'),
       system: systemPrompt,
       messages: [{ role: 'user', content: 'Announce the match result.' }],
       async onFinish({ text }) {
@@ -123,26 +128,60 @@ Announce that ${orange.name} has joined and is waiting for their perfect apple m
 
   const orangePrefsMatched = formatPreferences(breakdown.orangeToApple.satisfied);
   const applePrefsMatched = formatPreferences(breakdown.appleToOrange.satisfied);
+  
+  // Format violated preferences (what's NOT being met)
+  const formatViolated = (violations: string[]) => {
+    if (violations.length === 0) return '';
+    return violations.map(v => {
+      // Extract just the preference name (before the parenthesis with details)
+      const prefName = v.split(' (')[0];
+      const readable = prefName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      return `• ${readable} ❌`;
+    }).join('\n\n');
+  };
+  
+  const orangePrefsViolated = formatViolated(breakdown.orangeToApple.violated);
+  const applePrefsViolated = formatViolated(breakdown.appleToOrange.violated);
+
+  // Format other candidates (skip the first one which is the best match)
+  const otherCandidates = rankedCandidates.slice(1, 4);
+  const hasMultipleMatches = otherCandidates.length > 0;
+  const otherCandidatesText = hasMultipleMatches
+    ? `**Other compatible apples:**\n\n${otherCandidates.map(c => 
+        `• ${c.appleName} (${(c.score * 100).toFixed(0)}%)`
+      ).join('\n\n')}`
+    : '';
+
+  // Adjust messaging based on whether there are multiple matches
+  const matchIntro = hasMultipleMatches
+    ? `We found you great matches! The most compatible is **${match.appleName}**:`
+    : `We found you a great match: **${match.appleName}**!`;
 
   return `You are a witty matchmaker for fruits. Output ONLY the formatted announcement below, with no additional commentary. Use exact markdown formatting.
 
 🍎✨ **Great news, ${orange.name}!**
 
-A new apple named **${match.appleName}** just found YOU as their perfect match!
+${matchIntro}
 
 **Compatibility: ${(match.score * 100).toFixed(1)}%**
-
-• Preference match: ${(breakdown.preference * 100).toFixed(1)}%
-
-• Vibe match: ${(breakdown.embedding * 100).toFixed(1)}%
 
 ${orangePrefsMatched ? `**Your preferences met:**
 
 ${orangePrefsMatched}` : '**This apple checks all your boxes!** ✨'}
 
+${orangePrefsViolated ? `**Your preferences not met:**
+
+${orangePrefsViolated}` : ''}
+
 ${applePrefsMatched ? `**${match.appleName}'s preferences you satisfy:**
 
 ${applePrefsMatched}` : ''}
+
+${applePrefsViolated ? `**${match.appleName}'s preferences you don't meet:**
+
+${applePrefsViolated}` : ''}
+
+${otherCandidatesText}
 
 Add one short playful closing line with fruit puns/emojis.`;
 }
@@ -178,25 +217,58 @@ async function broadcastMatch(data: EdgeFunctionResponse, orangeAnnouncement: st
 
   const applePrefsMatched = formatPreferences(breakdown.appleToOrange.satisfied);
   const orangePrefsMatched = formatPreferences(breakdown.orangeToApple.satisfied);
+  
+  // Format violated preferences
+  const formatViolated = (violations: string[]) => {
+    if (violations.length === 0) return '';
+    return violations.map(v => {
+      const prefName = v.split(' (')[0];
+      const readable = prefName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      return `• ${readable} ❌`;
+    }).join('\n\n');
+  };
+  
+  const applePrefsViolated = formatViolated(breakdown.appleToOrange.violated);
+  const orangePrefsViolated = formatViolated(breakdown.orangeToApple.violated);
+
+  // Format other oranges that could also match this apple (from the apple's perspective)
+  const otherOranges = data.otherOrangesForApple || [];
+  const hasMultipleOranges = otherOranges.length > 0;
+  const otherOrangesText = hasMultipleOranges
+    ? `**Other compatible oranges:**\n\n${otherOranges.map(o => 
+        `• ${o.orangeName} (${(o.score * 100).toFixed(0)}%)`
+      ).join('\n\n')}`
+    : '';
+
+  // Adjust messaging based on whether there are multiple matches
+  const matchIntro = hasMultipleOranges
+    ? `We found you great matches! The most compatible is **${orange.name}**:`
+    : `We found you a great match: **${orange.name}**!`;
 
   // Generate the apple's announcement (they're receiving the match notification)
   const appleAnnouncement = `🍊✨ **Great news, ${match.appleName}!** 
 
-A new orange named **${orange.name}** just found YOU as their perfect match!
+${matchIntro}
 
 **Compatibility: ${(match.score * 100).toFixed(1)}%**
-
-• Preference match: ${(breakdown.preference * 100).toFixed(1)}%
-
-• Vibe match: ${(breakdown.embedding * 100).toFixed(1)}%
 
 ${applePrefsMatched ? `**Your preferences met:**
 
 ${applePrefsMatched}` : '**This orange checks all your boxes!** ✨'}
 
+${applePrefsViolated ? `**Your preferences not met:**
+
+${applePrefsViolated}` : ''}
+
 ${orangePrefsMatched ? `**${orange.name}'s preferences you satisfy:**
 
 ${orangePrefsMatched}` : ''}
+
+${orangePrefsViolated ? `**${orange.name}'s preferences you don't meet:**
+
+${orangePrefsViolated}` : ''}
+
+${otherOrangesText}
 
 Looks like your apple appeal caught someone's eye! 🍎💕`;
 
