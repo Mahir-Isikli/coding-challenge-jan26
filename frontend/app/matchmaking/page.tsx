@@ -2,16 +2,17 @@
 
 import { AppleChat } from "@/components/chat/AppleChat";
 import { OrangeChat } from "@/components/chat/OrangeChat";
-import { MatchGraph } from "@/app/dashboard/components/MatchGraph";
+import { MatchGraph, MatchGraphLegend } from "@/app/dashboard/components/MatchGraph";
 import { useRealtimeMatches } from "@/lib/useRealtimeMatches";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 
 export default function MatchmakingPage() {
   // Subscribe to realtime match events
   useRealtimeMatches();
 
   return (
-    <main className="max-w-7xl mx-auto px-6 py-6">
-      <div className="grid grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+    <main className="max-w-7xl mx-auto px-6 pt-6 pb-6">
+      <div className="grid grid-cols-3 gap-6 h-[calc(100vh-200px)]">
         {/* Left: Apple Chat */}
         <div className="min-h-0">
           <AppleChat />
@@ -19,17 +20,17 @@ export default function MatchmakingPage() {
 
         {/* Center: Match Network Graph */}
         <div className="min-h-0">
-          <div className="card h-full flex flex-col overflow-hidden">
-            <div className="px-4 py-3 border-b flex-shrink-0">
-              <h3 className="text-sm font-medium">Match Network</h3>
-              <p className="text-xs text-tertiary mt-0.5">
-                Visualizing fruit relationships
-              </p>
-            </div>
-            <div className="flex-1 min-h-0">
+          <Card className="h-full flex flex-col overflow-hidden py-0 gap-0">
+            <CardHeader className="px-4 py-3 flex items-center justify-center border-b flex-shrink-0">
+              <CardTitle className="text-sm text-center">Match Network</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-0 p-0">
               <MatchGraph />
-            </div>
-          </div>
+            </CardContent>
+            <CardFooter className="px-4 py-4 justify-center border-t flex-shrink-0">
+              <MatchGraphLegend />
+            </CardFooter>
+          </Card>
         </div>
 
         {/* Right: Orange Chat */}
