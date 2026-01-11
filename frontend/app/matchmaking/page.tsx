@@ -21,8 +21,8 @@ export default function MatchmakingPage() {
         {/* Center: Match Network Graph (wider - 2 columns) */}
         <div className="min-h-0 col-span-2">
           <Card className="h-full flex flex-col overflow-hidden py-0 gap-0">
-            <CardHeader className="px-4 py-3 flex items-center justify-center border-b flex-shrink-0">
-              <CardTitle className="text-sm text-center">Match Network</CardTitle>
+            <CardHeader className="px-4 py-3 h-11 flex items-center justify-center border-b flex-shrink-0">
+              <CardTitle className="text-sm text-center leading-none">Match Network</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 min-h-0 p-0">
               <MatchGraph />

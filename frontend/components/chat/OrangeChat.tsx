@@ -65,8 +65,8 @@ export function OrangeChat() {
 
   return (
     <Card className="flex flex-col h-full py-0 gap-0">
-      <CardHeader className="px-4 py-3 flex items-center justify-center border-b flex-shrink-0">
-        <CardTitle className="text-sm flex items-center justify-center gap-2">
+      <CardHeader className="px-4 py-3 h-11 flex items-center justify-center border-b flex-shrink-0">
+        <CardTitle className="text-sm flex items-center justify-center gap-2 leading-none">
           Orange Feed
           {isLoading && (
             <Badge variant="secondary" className="text-xs py-0 h-5">processing...</Badge>
