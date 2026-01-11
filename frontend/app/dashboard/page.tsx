@@ -57,7 +57,7 @@ function HeroStat({
   highlight?: boolean;
 }) {
   return (
-    <div className="card p-4">
+    <div className="card p-4 bg-white">
       <div className="flex items-center gap-2 mb-1">
         {icon && <span className="text-sm">{icon}</span>}
         <span className="text-[11px] font-medium text-[var(--color-text-tertiary)] uppercase tracking-wide">

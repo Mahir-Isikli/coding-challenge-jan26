@@ -28,7 +28,7 @@ export function QualityChart({ distribution, total }: QualityChartProps) {
   const maxValue = Math.max(...data.map(d => d.value), 1);
 
   return (
-    <div className="card p-5 h-full">
+    <div className="card p-5 h-full bg-white">
       <h3 className="text-[11px] font-medium text-[var(--color-text-tertiary)] uppercase tracking-wide mb-4">
         Match Quality
       </h3>
