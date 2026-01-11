@@ -265,15 +265,51 @@ export function MatchGraph() {
       const midX = ((start.x ?? 0) + (end.x ?? 0)) / 2;
       const midY = ((start.y ?? 0) + (end.y ?? 0)) / 2;
       const label = `${Math.round(score * 100)}%`;
-      const fontSize = 9 / globalScale;
-      ctx.font = `${fontSize}px sans-serif`;
+      // Base font size of 14px that scales with zoom (minimum 10px visual size)
+      const baseFontSize = 14;
+      const minVisualSize = 10;
+      const fontSize = Math.max(baseFontSize / globalScale, minVisualSize / globalScale);
+      ctx.font = `bold ${fontSize}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = `rgba(100, 100, 100, ${0.5 + score * 0.4})`;
+      // Draw background pill for better readability
+      const textMetrics = ctx.measureText(label);
+      const padding = 3 / globalScale;
+      const bgWidth = textMetrics.width + padding * 2;
+      const bgHeight = fontSize + padding * 2;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(midX - bgWidth / 2, midY - bgHeight / 2, bgWidth, bgHeight, 3 / globalScale);
+      ctx.fill();
+      // Draw text
+      ctx.fillStyle = `rgba(80, 80, 80, ${0.7 + score * 0.3})`;
       ctx.fillText(label, midX, midY);
     },
     []
   );
+
+  // Helper to find matches for a given node
+  const getMatchesForNode = useCallback((node: GraphNode) => {
+    return data.links.filter(link => {
+      const source = link.source as GraphNode | string;
+      const target = link.target as GraphNode | string;
+      const sourceId = typeof source === 'object' ? source.id : source;
+      const targetId = typeof target === 'object' ? target.id : target;
+      return sourceId === node.id || targetId === node.id;
+    }).map(link => {
+      const source = link.source as GraphNode | string;
+      const target = link.target as GraphNode | string;
+      const sourceId = typeof source === 'object' ? source.id : source;
+      const matchedId = sourceId === node.id 
+        ? (typeof target === 'object' ? target.id : target)
+        : sourceId;
+      const matchedNode = data.nodes.find(n => n.id === matchedId);
+      return {
+        node: matchedNode,
+        score: link.score ?? 0
+      };
+    });
+  }, [data]);
 
   const nodeLabel = useCallback((node: GraphNode) => {
     const isApple = node.type === 'apple';
@@ -290,20 +326,46 @@ export function MatchGraph() {
     const attrBadges = buildAttributeBadges(node.attributes);
     const prefBadges = buildPreferenceBadges(node.preferences);
     
+    // Get matches for this node - show best match in header
+    const matches = getMatchesForNode(node);
+    const bestMatch = matches.length > 0 ? matches.reduce((best, m) => m.score > best.score ? m : best, matches[0]) : null;
+    const matchBadgeHtml = bestMatch ? (() => {
+      const matchEmoji = bestMatch.node?.type === 'apple' ? '🍏' : '🍊';
+      const matchName = bestMatch.node?.name ?? 'Unknown';
+      const scorePercent = Math.round(bestMatch.score * 100);
+      const scoreColor = scorePercent >= 80 ? '#16a34a' : scorePercent >= 60 ? '#ca8a04' : '#dc2626';
+      const matchCount = matches.length > 1 ? `+${matches.length - 1}` : '';
+      return `
+        <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+          <span style="font-size: 14px;">${matchEmoji}</span>
+          <span style="font-size: 11px; color: #6b7280; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${matchName}</span>
+          <div style="
+            background: ${scoreColor}15;
+            color: ${scoreColor};
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+          ">${scorePercent}%</div>
+          ${matchCount ? `<span style="font-size: 10px; color: #9ca3af;">${matchCount}</span>` : ''}
+        </div>
+      `;
+    })() : '';
+    
     return `
       <div style="
         background: white;
         border: none;
         border-radius: 10px;
         min-width: 200px;
-        max-width: 320px;
+        max-width: 360px;
         box-shadow: none;
         font-family: system-ui, -apple-system, sans-serif;
       ">
         <div style="
           background: linear-gradient(135deg, ${accentBg} 0%, white 100%);
           padding: 10px 12px;
-          border-radius: 10px 10px 0 0;
+          border-radius: ${bestMatch ? '10px 10px 0 0' : '10px'};
         ">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 24px;">${emoji}</span>
@@ -311,6 +373,7 @@ export function MatchGraph() {
               <div style="font-weight: 600; font-size: 14px; color: #111;">${displayName}</div>
               <div style="font-size: 10px; color: ${accentColor}; font-weight: 500; text-transform: uppercase;">${node.type}</div>
             </div>
+            ${matchBadgeHtml}
           </div>
         </div>
         
@@ -329,7 +392,7 @@ export function MatchGraph() {
         </div>
       </div>
     `;
-  }, []);
+  }, [getMatchesForNode]);
 
   if (loading) {
     return (
@@ -401,7 +464,7 @@ export function MatchGraph() {
           backgroundColor="transparent"
           cooldownTicks={100}
           onEngineStop={handleEngineStop}
-          onNodeClick={(node) => console.log('Clicked node:', node)}
+          onNodeClick={() => {}}
           nodeLabel={nodeLabel}
           d3VelocityDecay={0.3}
         />
