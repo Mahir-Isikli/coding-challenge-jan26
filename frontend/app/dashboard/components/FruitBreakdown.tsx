@@ -23,34 +23,74 @@ function formatPrefName(pref: string): string {
     .trim();
 }
 
-function AttributeBadges({ attributes }: { attributes?: FruitBreakdownItem['attributes'] }) {
-  if (!attributes) return null;
+function formatAttributes(attributes?: FruitBreakdownItem['attributes']): string[] {
+  if (!attributes) return [];
+  const parts: string[] = [];
   
-  const badges: { label: string; emoji: string }[] = [];
+  if (attributes.size) parts.push(`size ${attributes.size}`);
+  if (attributes.weight) parts.push(`${attributes.weight}g`);
+  if (attributes.shineFactor) parts.push(attributes.shineFactor);
+  if (attributes.hasStem) parts.push('stem');
+  if (attributes.hasLeaf) parts.push('leaf');
+  if (attributes.hasWorm) parts.push('worm');
+  if (attributes.hasChemicals === false) parts.push('organic');
+  if (attributes.hasChemicals === true) parts.push('chemicals');
   
-  if (attributes.size) badges.push({ label: `Size ${attributes.size}`, emoji: '📏' });
-  if (attributes.weight) badges.push({ label: `${attributes.weight}g`, emoji: '⚖️' });
-  if (attributes.shineFactor) badges.push({ label: attributes.shineFactor, emoji: '✨' });
-  if (attributes.hasStem) badges.push({ label: 'Stem', emoji: '🌿' });
-  if (attributes.hasLeaf) badges.push({ label: 'Leaf', emoji: '🍃' });
-  if (attributes.hasWorm) badges.push({ label: 'Worm', emoji: '🐛' });
-  if (attributes.hasChemicals === false) badges.push({ label: 'Organic', emoji: '🌱' });
+  return parts;
+}
+
+function formatPreferences(preferences?: FruitBreakdownItem['preferences']): string[] {
+  if (!preferences) return [];
+  const parts: string[] = [];
   
-  if (badges.length === 0) return null;
+  if (preferences.size) {
+    const { min, max } = preferences.size;
+    if (min && max) parts.push(`size ${min}-${max}`);
+    else if (min) parts.push(`size ≥${min}`);
+    else if (max) parts.push(`size ≤${max}`);
+  }
+  if (preferences.weight) {
+    const { min, max } = preferences.weight;
+    if (min && max) parts.push(`${min}-${max}g`);
+    else if (min) parts.push(`≥${min}g`);
+    else if (max) parts.push(`≤${max}g`);
+  }
+  if (preferences.shineFactor) {
+    const shine = Array.isArray(preferences.shineFactor) 
+      ? preferences.shineFactor.join('/') 
+      : preferences.shineFactor;
+    parts.push(shine);
+  }
+  if (preferences.hasStem === true) parts.push('stem');
+  if (preferences.hasStem === false) parts.push('no stem');
+  if (preferences.hasLeaf === true) parts.push('leaf');
+  if (preferences.hasLeaf === false) parts.push('no leaf');
+  if (preferences.hasWorm === false) parts.push('no worm');
+  if (preferences.hasChemicals === false) parts.push('organic');
+  
+  return parts;
+}
+
+function InlineInfo({ attributes, preferences }: { 
+  attributes?: FruitBreakdownItem['attributes'];
+  preferences?: FruitBreakdownItem['preferences'];
+}) {
+  const attrParts = formatAttributes(attributes);
+  const prefParts = formatPreferences(preferences);
+  
+  if (attrParts.length === 0 && prefParts.length === 0) return null;
   
   return (
-    <div className="flex items-center gap-1 ml-2 overflow-hidden">
-      {badges.slice(0, 4).map((b, i) => (
-        <span
-          key={i}
-          className="px-1.5 py-0.5 text-[9px] rounded bg-gray-100 text-gray-600 whitespace-nowrap flex-shrink-0"
-          title={b.label}
-        >
-          {b.emoji}
+    <div className="flex items-center gap-3 ml-2 text-[10px] text-[var(--color-text-tertiary)] overflow-hidden">
+      {attrParts.length > 0 && (
+        <span className="truncate">
+          <span className="text-[var(--color-text-secondary)]">Has:</span> {attrParts.join(', ')}
         </span>
-      ))}
-      {badges.length > 4 && (
-        <span className="text-[9px] text-gray-400">+{badges.length - 4}</span>
+      )}
+      {prefParts.length > 0 && (
+        <span className="truncate">
+          <span className="text-[var(--color-text-secondary)]">Wants:</span> {prefParts.join(', ')}
+        </span>
       )}
     </div>
   );
@@ -75,10 +115,10 @@ function FruitCard({ fruit }: { fruit: FruitBreakdownItem }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span className="text-lg flex-shrink-0">{emoji}</span>
-          <span className="text-[13px] font-medium text-[var(--color-text)] truncate">
+          <span className="text-[13px] font-medium text-[var(--color-text)] whitespace-nowrap">
             {fruit.name}
           </span>
-          <AttributeBadges attributes={fruit.attributes} />
+          <InlineInfo attributes={fruit.attributes} preferences={fruit.preferences} />
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {fruit.matchCount > 0 ? (
