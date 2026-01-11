@@ -427,3 +427,15 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Force-graph tooltip override - remove default styling */
+.float-tooltip-kap {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  color: inherit !important;
+  font: inherit !important;
+  max-width: none !important;
+}

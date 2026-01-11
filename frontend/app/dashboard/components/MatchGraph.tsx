@@ -47,34 +47,33 @@ function buildAttributeBadges(attrs: FruitAttributes | undefined): string {
   const badges: string[] = [];
   
   const badgeStyle = (bg: string, text: string) => `
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 8px; border-radius: 12px; font-size: 11px;
-    background: ${bg}; color: ${text};
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px;
+    background: ${bg}; color: ${text}; font-weight: 500;
   `;
   
   if (attrs.size !== null) {
-    badges.push(`<span style="${badgeStyle('#f3f4f6', '#374151')}">📏 ${attrs.size}</span>`);
+    badges.push(`<span style="${badgeStyle('#f3f4f6', '#374151')}"><b>Size:</b> ${attrs.size}</span>`);
   }
   if (attrs.weight !== null) {
-    badges.push(`<span style="${badgeStyle('#f3f4f6', '#374151')}">⚖️ ${attrs.weight}g</span>`);
+    badges.push(`<span style="${badgeStyle('#f3f4f6', '#374151')}"><b>Weight:</b> ${attrs.weight}g</span>`);
   }
   if (attrs.shineFactor) {
-    const shineEmoji = attrs.shineFactor === 'extraShiny' ? '✨' : attrs.shineFactor === 'shiny' ? '🌟' : attrs.shineFactor === 'neutral' ? '○' : '●';
-    badges.push(`<span style="${badgeStyle('#fef3c7', '#92400e')}">${shineEmoji} ${attrs.shineFactor}</span>`);
+    badges.push(`<span style="${badgeStyle('#fef3c7', '#92400e')}"><b>Shine:</b> ${attrs.shineFactor}</span>`);
   }
   if (attrs.hasStem) {
-    badges.push(`<span style="${badgeStyle('#dcfce7', '#166534')}">🌿 stem</span>`);
+    badges.push(`<span style="${badgeStyle('#dcfce7', '#166534')}">Has stem</span>`);
   }
   if (attrs.hasLeaf) {
-    badges.push(`<span style="${badgeStyle('#dcfce7', '#166534')}">🍃 leaf</span>`);
+    badges.push(`<span style="${badgeStyle('#dcfce7', '#166534')}">Has leaf</span>`);
   }
   if (attrs.hasWorm) {
-    badges.push(`<span style="${badgeStyle('#fee2e2', '#991b1b')}">🐛 worm!</span>`);
+    badges.push(`<span style="${badgeStyle('#fee2e2', '#991b1b')}">Has worm 🐛</span>`);
   }
   if (attrs.hasChemicals === false) {
-    badges.push(`<span style="${badgeStyle('#dcfce7', '#166534')}">🌱 organic</span>`);
+    badges.push(`<span style="${badgeStyle('#dcfce7', '#166534')}">Organic</span>`);
   } else if (attrs.hasChemicals === true) {
-    badges.push(`<span style="${badgeStyle('#fef3c7', '#92400e')}">🧪 treated</span>`);
+    badges.push(`<span style="${badgeStyle('#fef3c7', '#92400e')}">Chemically treated</span>`);
   }
   
   return badges.join(' ');
@@ -83,43 +82,43 @@ function buildAttributeBadges(attrs: FruitAttributes | undefined): string {
 // Helper to build preference badges HTML  
 function buildPreferenceBadges(prefs: FruitPreferences | undefined): string {
   if (!prefs || Object.keys(prefs).length === 0) {
-    return `<span style="color: #6b7280; font-style: italic; font-size: 12px;">Open to anything! 💫</span>`;
+    return `<span style="color: #6b7280; font-style: italic; font-size: 12px;">Open to anything!</span>`;
   }
   
   const badges: string[] = [];
   const badgeStyle = `
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 8px; border-radius: 12px; font-size: 11px;
-    background: #ede9fe; color: #5b21b6;
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px;
+    background: #ede9fe; color: #5b21b6; font-weight: 500;
   `;
   
   if (prefs.size) {
     const sizeText = prefs.size.min && prefs.size.max 
-      ? `${prefs.size.min}-${prefs.size.max}` 
-      : prefs.size.min ? `≥${prefs.size.min}` : `≤${prefs.size.max}`;
-    badges.push(`<span style="${badgeStyle}">📏 ${sizeText}</span>`);
+      ? `${prefs.size.min}–${prefs.size.max}` 
+      : prefs.size.min ? `${prefs.size.min}+` : `≤${prefs.size.max}`;
+    badges.push(`<span style="${badgeStyle}"><b>Size:</b> ${sizeText}</span>`);
   }
   if (prefs.weight) {
     const weightText = prefs.weight.min && prefs.weight.max 
-      ? `${prefs.weight.min}-${prefs.weight.max}g` 
-      : prefs.weight.min ? `≥${prefs.weight.min}g` : `≤${prefs.weight.max}g`;
-    badges.push(`<span style="${badgeStyle}">⚖️ ${weightText}</span>`);
+      ? `${prefs.weight.min}–${prefs.weight.max}g` 
+      : prefs.weight.min ? `${prefs.weight.min}g+` : `≤${prefs.weight.max}g`;
+    badges.push(`<span style="${badgeStyle}"><b>Weight:</b> ${weightText}</span>`);
   }
   if (prefs.shineFactor) {
-    const shine = Array.isArray(prefs.shineFactor) ? prefs.shineFactor.join('/') : prefs.shineFactor;
-    badges.push(`<span style="${badgeStyle}">✨ ${shine}</span>`);
+    const shine = Array.isArray(prefs.shineFactor) ? prefs.shineFactor.join(' or ') : prefs.shineFactor;
+    badges.push(`<span style="${badgeStyle}"><b>Shine:</b> ${shine}</span>`);
   }
   if (prefs.hasStem !== undefined) {
-    badges.push(`<span style="${badgeStyle}">${prefs.hasStem ? '🌿 stem' : '🚫 no stem'}</span>`);
+    badges.push(`<span style="${badgeStyle}">${prefs.hasStem ? 'Wants stem' : 'No stem'}</span>`);
   }
   if (prefs.hasLeaf !== undefined) {
-    badges.push(`<span style="${badgeStyle}">${prefs.hasLeaf ? '🍃 leaf' : '🚫 no leaf'}</span>`);
+    badges.push(`<span style="${badgeStyle}">${prefs.hasLeaf ? 'Wants leaf' : 'No leaf'}</span>`);
   }
   if (prefs.hasWorm === false) {
-    badges.push(`<span style="${badgeStyle}">🚫🐛 no worms</span>`);
+    badges.push(`<span style="${badgeStyle}">No worms</span>`);
   }
   if (prefs.hasChemicals === false) {
-    badges.push(`<span style="${badgeStyle}">🌱 organic only</span>`);
+    badges.push(`<span style="${badgeStyle}">Must be organic</span>`);
   }
   
   return badges.join(' ');
@@ -294,42 +293,37 @@ export function MatchGraph() {
     return `
       <div style="
         background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        min-width: 220px;
-        max-width: 300px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+        border-radius: 10px;
+        min-width: 200px;
+        max-width: 320px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         font-family: system-ui, -apple-system, sans-serif;
       ">
-        <!-- Header with accent color -->
         <div style="
           background: linear-gradient(135deg, ${accentBg} 0%, white 100%);
-          padding: 12px 14px;
-          border-bottom: 1px solid #f3f4f6;
+          padding: 10px 12px;
+          border-radius: 10px 10px 0 0;
         ">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${emoji}</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 24px;">${emoji}</span>
             <div>
-              <div style="font-weight: 700; font-size: 15px; color: #111; letter-spacing: -0.3px;">${displayName}</div>
-              <div style="font-size: 11px; color: ${accentColor}; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">${node.type}</div>
+              <div style="font-weight: 600; font-size: 14px; color: #111;">${displayName}</div>
+              <div style="font-size: 10px; color: ${accentColor}; font-weight: 500; text-transform: uppercase;">${node.type}</div>
             </div>
           </div>
         </div>
         
-        <!-- Body -->
-        <div style="padding: 12px 14px;">
-          <!-- Attributes -->
+        <div style="padding: 10px 12px;">
           ${attrBadges ? `
-            <div style="margin-bottom: 10px;">
-              <div style="font-size: 10px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 6px; letter-spacing: 0.5px;">What I have</div>
-              <div style="display: flex; flex-wrap: wrap; gap: 4px; line-height: 1.8;">${attrBadges}</div>
+            <div style="margin-bottom: 8px;">
+              <div style="font-size: 10px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 5px;">What I have</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 5px;">${attrBadges}</div>
             </div>
           ` : ''}
           
-          <!-- Preferences -->
           <div>
-            <div style="font-size: 10px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 6px; letter-spacing: 0.5px;">What I want</div>
-            <div style="display: flex; flex-wrap: wrap; gap: 4px; line-height: 1.8;">${prefBadges}</div>
+            <div style="font-size: 10px; font-weight: 600; text-transform: uppercase; color: #9ca3af; margin-bottom: 5px;">What I want</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px;">${prefBadges}</div>
           </div>
         </div>
       </div>

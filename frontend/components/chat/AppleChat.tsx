@@ -33,7 +33,7 @@ export function AppleChat() {
     addAppleFeedMessage({
       id: `apple-${Date.now()}`,
       type: "apple",
-      content: "New apple joining the matchmaking pool...",
+      content: "Joining the pool...",
       timestamp: new Date(),
     });
 
