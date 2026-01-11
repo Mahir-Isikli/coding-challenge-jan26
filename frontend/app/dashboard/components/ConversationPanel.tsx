@@ -5,7 +5,6 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Markdown } from "./Markdown";
 import { useMatchmakingStore, type FeedMessage } from "@/lib/store";
-import { useRealtimeMatches } from "@/lib/useRealtimeMatches";
 
 export function ConversationPanel() {
   const { feedMessages, addFeedMessage, clearFeed } = useMatchmakingStore();
@@ -16,9 +15,6 @@ export function ConversationPanel() {
   
   // Keep ref in sync with state
   activeTypeRef.current = activeType;
-
-  // Subscribe to realtime match events
-  useRealtimeMatches();
 
   // Apple chat hook
   const appleChat = useChat({
