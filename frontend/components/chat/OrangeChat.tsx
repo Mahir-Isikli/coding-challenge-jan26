@@ -117,8 +117,9 @@ export function OrangeChat() {
             </motion.div>
           </AnimatePresence>
         ) : (
-          <ScrollArea className="flex-1 p-4">
-            <AnimatePresence mode="wait">
+          <div className="flex-1 min-h-0">
+            <ScrollArea className="h-full p-4">
+              <AnimatePresence mode="wait">
               <motion.div
                 key="messages"
                 initial={{ opacity: 0 }}
@@ -148,8 +149,9 @@ export function OrangeChat() {
                 )}
                 <div ref={messagesEndRef} />
               </motion.div>
-            </AnimatePresence>
-          </ScrollArea>
+              </AnimatePresence>
+            </ScrollArea>
+          </div>
         )}
       </CardContent>
 
