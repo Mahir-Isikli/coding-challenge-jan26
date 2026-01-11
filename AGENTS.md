@@ -84,13 +84,38 @@ cd frontend && pnpm dev
 
 ## Implementation Status
 
+All README requirements completed:
+
 | Component | Status |
 |-----------|--------|
-| SurrealDB Cloud | ✅ Schema + 40 fruits seeded |
+| SurrealDB Cloud | ✅ Schema + 40 fruits seeded with embeddings |
 | Edge functions | ✅ Deployed to hosted Supabase |
-| Hybrid matching | ✅ Preference + Embedding + Collaborative |
+| Hybrid matching | ✅ Preference (40%) + Embedding (35%) + Collaborative (25%) |
 | Graph relationships | ✅ RELATE edges with score breakdown |
-| LLM announcements | ✅ Honest about preference violations |
+| LLM announcements | ✅ Dry mode for testing (see STYLE.md for playful mode) |
 | Realtime broadcast | ✅ Matches pushed via Supabase Realtime |
 | Frontend UI | ✅ Two-panel chat + Match Network graph |
-| Dashboard | ✅ Metrics at `/dashboard` |
+| Dashboard | ✅ Redesigned with hero stats + quality chart + recent matches |
+
+Utility scripts:
+- `seed-embeddings.mjs` - One-time script to generate embeddings for seed data
+
+## UI Components
+
+The frontend uses shadcn/ui components with a Linear-inspired design system:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Card, Badge, Button | `components/ui/` | Base shadcn components |
+| NavDock | `components/layout/` | Floating pill navigation |
+| AppleChat, OrangeChat | `components/chat/` | Split-panel chat interfaces |
+| QualityChart | `app/dashboard/components/` | CSS progress bars for match quality distribution |
+| RecentMatches | `app/dashboard/components/` | Card-style match list with mini progress bars |
+
+### Dashboard Layout
+
+The dashboard (`/dashboard`) uses a two-tier layout:
+1. **Hero stats row** - 4 metric cards (Apples, Oranges, Matches, Avg Score)
+2. **Main content** - 2-column grid with Quality Chart (40%) and Recent Matches (60%)
+
+Design system uses CSS variables from `globals.css` for consistent theming.
