@@ -1,23 +1,15 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { Markdown } from "@/app/dashboard/components/Markdown";
 import { useMatchmakingStore, type FeedMessage } from "@/lib/store";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fwqoutllbbwyhrucsvly.supabase.co";
+
 export function AppleChat() {
   const { appleFeedMessages, addAppleFeedMessage, clearAppleFeed } = useMatchmakingStore();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const lastProcessedRef = useRef<string | null>(null);
-
-  const appleChat = useChat({
-    id: "apple-chat",
-    transport: new DefaultChatTransport({
-      api: "/api/chat/apple",
-    }),
-  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,46 +17,11 @@ export function AppleChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [appleFeedMessages, appleChat.messages]);
-
-  useEffect(() => {
-    if (appleChat.status !== "ready" || !isProcessing) return;
-
-    const assistantMsg = appleChat.messages.find((m) => m.role === "assistant");
-    if (!assistantMsg) return;
-
-    const msgId = assistantMsg.id;
-    if (lastProcessedRef.current === msgId) return;
-
-    const content = assistantMsg.parts
-      .map((part) => (part.type === "text" ? part.text : ""))
-      .join("");
-
-    if (content) {
-      lastProcessedRef.current = msgId;
-      addAppleFeedMessage({
-        id: `match-apple-${Date.now()}`,
-        type: "match",
-        content,
-        timestamp: new Date(),
-      });
-      setTimeout(() => setIsProcessing(false), 0);
-    }
-  }, [appleChat.status, appleChat.messages, isProcessing, addAppleFeedMessage]);
-
-  const getStreamingContent = () => {
-    const assistantMsg = appleChat.messages.find((m) => m.role === "assistant");
-    if (!assistantMsg) return "";
-
-    return assistantMsg.parts
-      .map((part) => (part.type === "text" ? part.text : ""))
-      .join("");
-  };
+  }, [appleFeedMessages]);
 
   const handleNewApple = async () => {
-    if (appleChat.status === "streaming") return;
-    setIsProcessing(true);
-    lastProcessedRef.current = null;
+    if (isLoading) return;
+    setIsLoading(true);
 
     addAppleFeedMessage({
       id: `apple-${Date.now()}`,
@@ -73,12 +30,31 @@ export function AppleChat() {
       timestamp: new Date(),
     });
 
-    appleChat.setMessages([]);
-    appleChat.sendMessage({ text: "Create a new apple and find a match" });
-  };
+    try {
+      // Call edge function directly - it handles everything including Realtime broadcast
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/get-incoming-apple`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
 
-  const isLoading = appleChat.status === "streaming";
-  const streamingContent = getStreamingContent();
+      if (!response.ok) {
+        throw new Error(`Failed: ${response.statusText}`);
+      }
+
+      // Realtime will deliver the match announcement to the feed
+    } catch (error) {
+      console.error('Error adding apple:', error);
+      addAppleFeedMessage({
+        id: `error-${Date.now()}`,
+        type: "system",
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date(),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="card flex flex-col h-full">
@@ -87,16 +63,11 @@ export function AppleChat() {
           <span>🍎</span>
           <span className="text-sm font-medium">Apple Feed</span>
           {isLoading && (
-            <span className="text-xs text-tertiary">(streaming...)</span>
+            <span className="text-xs text-tertiary">(processing...)</span>
           )}
         </div>
         <button
-          onClick={() => {
-            clearAppleFeed();
-            appleChat.setMessages([]);
-            setIsProcessing(false);
-            lastProcessedRef.current = null;
-          }}
+          onClick={clearAppleFeed}
           className="text-xs text-tertiary hover:text-secondary"
         >
           Clear
@@ -108,32 +79,14 @@ export function AppleChat() {
           <MessageBubble key={msg.id} message={msg} />
         ))}
 
-        {isLoading && streamingContent && (
-          <div className="message message-match">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium">Match</span>
-                <span className="badge badge-live text-xs">Live</span>
-              </div>
-              <span className="text-xs text-tertiary font-mono">
-                {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </div>
-            <div className="text-sm leading-relaxed prose prose-sm max-w-none">
-              <Markdown content={streamingContent} />
-            </div>
-            <span className="inline-block w-2 h-4 bg-current animate-pulse ml-0.5" />
-          </div>
-        )}
-
-        {isLoading && !streamingContent && (
+        {isLoading && (
           <div className="flex items-center gap-2 text-sm text-tertiary">
             <div className="loading-dots">
               <span></span>
               <span></span>
               <span></span>
             </div>
-            <span>Processing apple...</span>
+            <span>Finding match...</span>
           </div>
         )}
         <div ref={messagesEndRef} />

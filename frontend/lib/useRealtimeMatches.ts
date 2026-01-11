@@ -14,20 +14,26 @@ interface BroadcastPayload {
   };
 }
 
+// Track processed messages to prevent duplicates from React Strict Mode or reconnections
+const processedMessages = new Set<string>();
+
 export function useRealtimeMatches() {
   const { 
     addNotification, 
     addMatch,
     addAppleFeedMessage,
     addOrangeFeedMessage,
-    // Legacy
-    addFeedMessage,
   } = useMatchmakingStore();
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!isRealtimeConfigured()) {
       console.log("[Realtime] Skipping - NEXT_PUBLIC_SUPABASE_ANON_KEY not configured");
+      return;
+    }
+
+    // Prevent duplicate subscriptions
+    if (channelRef.current) {
       return;
     }
 
@@ -40,6 +46,17 @@ export function useRealtimeMatches() {
     channel
       .on("broadcast", { event: "new_match" }, (message) => {
         const payload = message.payload as BroadcastPayload;
+        
+        // Deduplicate using apple+orange+score as unique key
+        const msgKey = `${payload.appleId}-${payload.orangeId}-${payload.score}`;
+        if (processedMessages.has(msgKey)) {
+          console.log("[Realtime] Skipping duplicate message:", msgKey);
+          return;
+        }
+        processedMessages.add(msgKey);
+        
+        // Clean up old entries after 10 seconds to prevent memory leak
+        setTimeout(() => processedMessages.delete(msgKey), 10000);
 
         const notification: MatchNotification = {
           id: `notif-${Date.now()}`,
@@ -74,25 +91,21 @@ export function useRealtimeMatches() {
           timestamp: new Date(),
         };
         addAppleFeedMessage(appleMessage);
-        addFeedMessage(appleMessage); // Legacy
 
-        // Route to Orange panel (slight delay for visual effect)
-        setTimeout(() => {
-          const orangeMessage: FeedMessage = {
-            id: `feed-orange-${Date.now()}`,
-            type: "match",
-            content: payload.announcements.forOrange,
-            fruitId: payload.orangeId,
-            matchData: {
-              appleId: payload.appleId,
-              orangeId: payload.orangeId,
-              score: payload.score,
-            },
-            timestamp: new Date(),
-          };
-          addOrangeFeedMessage(orangeMessage);
-          addFeedMessage(orangeMessage); // Legacy
-        }, 500);
+        // Route to Orange panel
+        const orangeMessage: FeedMessage = {
+          id: `feed-orange-${Date.now()}`,
+          type: "match",
+          content: payload.announcements.forOrange,
+          fruitId: payload.orangeId,
+          matchData: {
+            appleId: payload.appleId,
+            orangeId: payload.orangeId,
+            score: payload.score,
+          },
+          timestamp: new Date(),
+        };
+        addOrangeFeedMessage(orangeMessage);
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
@@ -110,5 +123,5 @@ export function useRealtimeMatches() {
         channelRef.current = null;
       }
     };
-  }, [addNotification, addMatch, addAppleFeedMessage, addOrangeFeedMessage, addFeedMessage]);
+  }, [addNotification, addMatch, addAppleFeedMessage, addOrangeFeedMessage]);
 }

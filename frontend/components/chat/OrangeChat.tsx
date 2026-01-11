@@ -1,23 +1,15 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { Markdown } from "@/app/dashboard/components/Markdown";
 import { useMatchmakingStore, type FeedMessage } from "@/lib/store";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fwqoutllbbwyhrucsvly.supabase.co";
+
 export function OrangeChat() {
   const { orangeFeedMessages, addOrangeFeedMessage, clearOrangeFeed } = useMatchmakingStore();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const lastProcessedRef = useRef<string | null>(null);
-
-  const orangeChat = useChat({
-    id: "orange-chat",
-    transport: new DefaultChatTransport({
-      api: "/api/chat/orange",
-    }),
-  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,46 +17,11 @@ export function OrangeChat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [orangeFeedMessages, orangeChat.messages]);
-
-  useEffect(() => {
-    if (orangeChat.status !== "ready" || !isProcessing) return;
-
-    const assistantMsg = orangeChat.messages.find((m) => m.role === "assistant");
-    if (!assistantMsg) return;
-
-    const msgId = assistantMsg.id;
-    if (lastProcessedRef.current === msgId) return;
-
-    const content = assistantMsg.parts
-      .map((part) => (part.type === "text" ? part.text : ""))
-      .join("");
-
-    if (content) {
-      lastProcessedRef.current = msgId;
-      addOrangeFeedMessage({
-        id: `match-orange-${Date.now()}`,
-        type: "match",
-        content,
-        timestamp: new Date(),
-      });
-      setTimeout(() => setIsProcessing(false), 0);
-    }
-  }, [orangeChat.status, orangeChat.messages, isProcessing, addOrangeFeedMessage]);
-
-  const getStreamingContent = () => {
-    const assistantMsg = orangeChat.messages.find((m) => m.role === "assistant");
-    if (!assistantMsg) return "";
-
-    return assistantMsg.parts
-      .map((part) => (part.type === "text" ? part.text : ""))
-      .join("");
-  };
+  }, [orangeFeedMessages]);
 
   const handleNewOrange = async () => {
-    if (orangeChat.status === "streaming") return;
-    setIsProcessing(true);
-    lastProcessedRef.current = null;
+    if (isLoading) return;
+    setIsLoading(true);
 
     addOrangeFeedMessage({
       id: `orange-${Date.now()}`,
@@ -73,12 +30,31 @@ export function OrangeChat() {
       timestamp: new Date(),
     });
 
-    orangeChat.setMessages([]);
-    orangeChat.sendMessage({ text: "Create a new orange and find a match" });
-  };
+    try {
+      // Call edge function directly - it handles everything including Realtime broadcast
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/get-incoming-orange`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
 
-  const isLoading = orangeChat.status === "streaming";
-  const streamingContent = getStreamingContent();
+      if (!response.ok) {
+        throw new Error(`Failed: ${response.statusText}`);
+      }
+
+      // Realtime will deliver the match announcement to the feed
+    } catch (error) {
+      console.error('Error adding orange:', error);
+      addOrangeFeedMessage({
+        id: `error-${Date.now()}`,
+        type: "system",
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date(),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="card flex flex-col h-full">
@@ -87,16 +63,11 @@ export function OrangeChat() {
           <span>🍊</span>
           <span className="text-sm font-medium">Orange Feed</span>
           {isLoading && (
-            <span className="text-xs text-tertiary">(streaming...)</span>
+            <span className="text-xs text-tertiary">(processing...)</span>
           )}
         </div>
         <button
-          onClick={() => {
-            clearOrangeFeed();
-            orangeChat.setMessages([]);
-            setIsProcessing(false);
-            lastProcessedRef.current = null;
-          }}
+          onClick={clearOrangeFeed}
           className="text-xs text-tertiary hover:text-secondary"
         >
           Clear
@@ -108,32 +79,14 @@ export function OrangeChat() {
           <MessageBubble key={msg.id} message={msg} />
         ))}
 
-        {isLoading && streamingContent && (
-          <div className="message message-match">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium">Match</span>
-                <span className="badge badge-live text-xs">Live</span>
-              </div>
-              <span className="text-xs text-tertiary font-mono">
-                {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </div>
-            <div className="text-sm leading-relaxed prose prose-sm max-w-none">
-              <Markdown content={streamingContent} />
-            </div>
-            <span className="inline-block w-2 h-4 bg-current animate-pulse ml-0.5" />
-          </div>
-        )}
-
-        {isLoading && !streamingContent && (
+        {isLoading && (
           <div className="flex items-center gap-2 text-sm text-tertiary">
             <div className="loading-dots">
               <span></span>
               <span></span>
               <span></span>
             </div>
-            <span>Processing orange...</span>
+            <span>Finding match...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
