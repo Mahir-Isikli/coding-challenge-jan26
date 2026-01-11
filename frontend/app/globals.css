@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../node_modules/streamdown/dist/*.js";
 
 /* =============================================================================
    LINEAR-STYLE MINIMAL DESIGN
@@ -426,6 +427,24 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Streamdown table overrides - lighter backgrounds */
+[data-streamdown="table-header"],
+[data-streamdown] thead {
+  background-color: #fafafa !important;
+  background: #fafafa !important;
+}
+
+[data-streamdown="table-body"],
+[data-streamdown] tbody {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+[data-streamdown] tbody tr {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
 }
 
 /* Force-graph tooltip override - remove default styling */
