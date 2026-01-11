@@ -104,13 +104,13 @@ Deno.serve(async (req) => {
     }
 
     // 5c. Collaborative Filtering: Find similar oranges and what apples they liked
-    // First find oranges with similar embeddings (top 5)
+    // First find oranges with similar embeddings (top 5) using KNN operator
     const similarOrangesResult = await db.query<FruitRecord[]>(`
-      SELECT * FROM fruit 
+      LET $query_embedding = ${JSON.stringify(embedding)};
+      SELECT *, vector::similarity::cosine(embedding, $query_embedding) AS similarity 
+      FROM fruit 
       WHERE type = "orange" 
-      AND embedding != NONE
-      ORDER BY vector::similarity::cosine(embedding, ${JSON.stringify(embedding)}) DESC
-      LIMIT 5;
+      AND embedding <|5|> $query_embedding;
     `);
     const similarOranges = similarOrangesResult[0] || [];
 
@@ -289,6 +289,8 @@ Please announce to the apple that they've been found by this orange!`,
               appleId: bestMatch.apple.id,
               score: bestMatch.score,
               announcement: matchAnnouncement,
+              appleAnnouncement: appleAnnouncement,
+              breakdown: bestMatch.breakdown,
             }
           : null,
       }),

@@ -77,7 +77,7 @@ No match found yet. Acknowledge the orange joined and is waiting for their perfe
             orangeId: data.orange?.id,
             score: data.match.score,
             announcements: {
-              forApple: `🍎 Someone found you! A new orange matched with you at ${(data.match.score * 100).toFixed(0)}% compatibility!`,
+              forApple: data.match.appleAnnouncement,
               forOrange: data.match.announcement,
             },
           },
