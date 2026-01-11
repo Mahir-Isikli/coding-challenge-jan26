@@ -5,12 +5,19 @@ import { generateApple, communicateAttributes, communicatePreferences } from "..
 /**
  * Get Incoming Apple Edge Function
  *
+ * HYBRID MATCHING ALGORITHM:
+ * 1. Embedding similarity (semantic match) - 60% weight
+ * 2. Collaborative filtering (what did similar apples like?) - 25% weight  
+ * 3. Graph popularity (how successful is this orange?) - 15% weight
+ *
  * Task Flow:
  * 1. Generate a new apple instance
  * 2. Capture the new apple's communication (attributes and preferences)
- * 3. Store the new apple in SurrealDB
- * 4. Match the new apple to existing oranges
- * 5. Communicate matching results back to the apple via LLM
+ * 3. Generate embedding for the apple
+ * 4. Store the new apple in SurrealDB
+ * 5. HYBRID MATCH: Combine embedding similarity + graph signals
+ * 6. Create RELATE edge for the match
+ * 7. Communicate matching results back via LLM
  */
 
 // CORS headers for local development
@@ -19,6 +26,33 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+// Scoring weights for hybrid algorithm
+const WEIGHTS = {
+  EMBEDDING: 0.60,      // Semantic similarity
+  COLLABORATIVE: 0.25,  // What similar apples liked
+  POPULARITY: 0.15,     // Orange's match success rate
+};
+
+interface FruitRecord {
+  id: string;
+  type: string;
+  attributes: Fruit["attributes"];
+  preferences: Fruit["preferences"];
+  embedding?: number[];
+  description?: string;
+}
+
+interface OrangeGraphStats {
+  id: string;
+  match_count: number;
+  avg_score: number;
+}
+
+interface CollaborativeMatch {
+  orange_id: string;
+  recommender_score: number; // How well the similar apple matched with this orange
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -41,20 +75,110 @@ Deno.serve(async (req) => {
     // Step 4: Match the new apple to existing oranges
     // TODO: Implement apple matching logic
 
-    // Step 5: Communicate matching results via LLM
-    // TODO: Implement matching results communication logic
-
-    let bestMatch: { orange: FruitRecord; score: number } | null = null;
+    // Step 5: HYBRID MATCHING - Combine embedding + graph signals
+    
+    // 5a. Get all oranges with embeddings
+    const oranges = await db.query<FruitRecord[]>(`
+      SELECT * FROM fruit WHERE type = "orange" AND embedding != NONE;
+    `);
     const orangeList = oranges[0] || [];
 
-    for (const orange of orangeList) {
-      if (orange.embedding) {
-        const score = cosineSimilarity(embedding, orange.embedding);
-        if (!bestMatch || score > bestMatch.score) {
-          bestMatch = { orange, score };
+    // 5b. Graph Query: Get popularity stats for all oranges (match count + avg score)
+    // Using graph traversal: orange <- matched <- apple
+    const graphStatsResult = await db.query<OrangeGraphStats[]>(`
+      SELECT 
+        id,
+        count(<-matched<-fruit) AS match_count,
+        math::mean(<-matched.score) AS avg_score
+      FROM fruit 
+      WHERE type = "orange";
+    `);
+    const graphStats = new Map<string, OrangeGraphStats>();
+    for (const stat of (graphStatsResult[0] || [])) {
+      graphStats.set(stat.id, stat);
+    }
+
+    // 5c. Collaborative Filtering: Find similar apples and what oranges they liked
+    // First find apples with similar embeddings (top 5)
+    const similarApplesResult = await db.query<FruitRecord[]>(`
+      SELECT * FROM fruit 
+      WHERE type = "apple" 
+      AND embedding != NONE
+      ORDER BY vector::similarity::cosine(embedding, ${JSON.stringify(embedding)}) DESC
+      LIMIT 5;
+    `);
+    const similarApples = similarApplesResult[0] || [];
+
+    // Get oranges that similar apples matched with (collaborative signal)
+    const collaborativeScores = new Map<string, number[]>();
+    for (const similarApple of similarApples) {
+      // Traverse graph: similar_apple -> matched -> orange
+      const matchedOrangesResult = await db.query<Array<{ out: string; score: number }>>(`
+        SELECT out, score FROM matched WHERE in = ${similarApple.id};
+      `);
+      for (const match of (matchedOrangesResult[0] || [])) {
+        if (!collaborativeScores.has(match.out)) {
+          collaborativeScores.set(match.out, []);
         }
+        collaborativeScores.get(match.out)!.push(match.score);
       }
     }
+
+    // 5d. Calculate hybrid scores for each orange
+    let bestMatch: { orange: FruitRecord; score: number; breakdown: { embedding: number; collaborative: number; popularity: number } } | null = null;
+    
+    // Find max values for normalization
+    let maxMatchCount = 1;
+    for (const stat of graphStats.values()) {
+      if (stat.match_count > maxMatchCount) maxMatchCount = stat.match_count;
+    }
+
+    for (const orange of orangeList) {
+      if (!orange.embedding) continue;
+
+      // Embedding score (0-1)
+      const embeddingScore = cosineSimilarity(embedding, orange.embedding);
+
+      // Collaborative score: average of scores from similar apples' matches with this orange
+      const collabScoresForOrange = collaborativeScores.get(orange.id) || [];
+      const collaborativeScore = collabScoresForOrange.length > 0
+        ? collabScoresForOrange.reduce((a, b) => a + b, 0) / collabScoresForOrange.length
+        : 0;
+
+      // Popularity score: normalized match count + avg match quality
+      const stats = graphStats.get(orange.id);
+      const normalizedPopularity = stats 
+        ? (stats.match_count / maxMatchCount) * 0.5 + (stats.avg_score || 0) * 0.5
+        : 0;
+
+      // HYBRID SCORE
+      const hybridScore = 
+        (embeddingScore * WEIGHTS.EMBEDDING) +
+        (collaborativeScore * WEIGHTS.COLLABORATIVE) +
+        (normalizedPopularity * WEIGHTS.POPULARITY);
+
+      if (!bestMatch || hybridScore > bestMatch.score) {
+        bestMatch = { 
+          orange, 
+          score: hybridScore,
+          breakdown: {
+            embedding: embeddingScore,
+            collaborative: collaborativeScore,
+            popularity: normalizedPopularity,
+          }
+        };
+      }
+    }
+
+    console.log("[Hybrid Match]", bestMatch ? {
+      orangeId: bestMatch.orange.id,
+      finalScore: bestMatch.score.toFixed(3),
+      breakdown: {
+        embedding: `${(bestMatch.breakdown.embedding * 100).toFixed(1)}%`,
+        collaborative: `${(bestMatch.breakdown.collaborative * 100).toFixed(1)}%`,
+        popularity: `${(bestMatch.breakdown.popularity * 100).toFixed(1)}%`,
+      }
+    } : "No match found");
 
     let matchAnnouncement = "No matching oranges found yet.";
     let orangeAnnouncement = "";
@@ -84,8 +208,12 @@ I found them a match! An orange with these qualities:
 ${JSON.stringify(bestMatch.orange.attributes, null, 2)}
 
 The compatibility score is ${(bestMatch.score * 100).toFixed(1)}%.
+Score breakdown:
+- Semantic match: ${(bestMatch.breakdown.embedding * 100).toFixed(1)}%
+- Similar apples liked this orange: ${(bestMatch.breakdown.collaborative * 100).toFixed(1)}%
+- Orange's popularity: ${(bestMatch.breakdown.popularity * 100).toFixed(1)}%
 
-Please announce this match in a fun way!`,
+Please announce this match in a fun way! You can mention that this was found using both semantic compatibility AND recommendations from similar apples.`,
           maxTokens: 256,
         }),
         generateText({
