@@ -1,3 +1,12 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 interface Match {
   id: string;
   appleId: string;
@@ -13,7 +22,6 @@ interface RecentMatchesProps {
 
 function formatDisplay(id: string, name?: string): string {
   if (name) return name;
-  // Fallback to ID-based display
   const parts = id.split(":")[1] || id;
   const numMatch = parts.match(/_(\d+)$/);
   if (!numMatch) return "?";
@@ -42,51 +50,60 @@ export function RecentMatches({ matches }: RecentMatchesProps) {
           </span>
         )}
       </div>
-      <div className="space-y-2">
-        {matches.length > 0 ? (
-          matches.slice(0, 8).map((match) => {
-            const scorePercent = Math.round(match.score * 100);
-            const scoreColor = getScoreColor(match.score);
-            
-            return (
-              <div
-                key={match.id}
-                className="flex items-center gap-3 p-2.5 rounded-md bg-[var(--color-bg-subtle)] hover:bg-[var(--color-bg-muted)] transition-colors"
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="flex items-center gap-1.5">
-                    <span>🍎</span>
-                    <span className="text-[13px] text-[var(--color-text)] truncate max-w-[80px]">{formatDisplay(match.appleId, match.appleName)}</span>
-                  </span>
-                  <span className="text-[var(--color-text-tertiary)]">→</span>
-                  <span className="flex items-center gap-1.5">
-                    <span>🍊</span>
-                    <span className="text-[13px] text-[var(--color-text)] truncate max-w-[80px]">{formatDisplay(match.orangeId, match.orangeName)}</span>
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-1.5 bg-[var(--color-bg-muted)] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full"
-                      style={{ width: `${scorePercent}%`, backgroundColor: scoreColor }}
-                    />
-                  </div>
-                  <span 
-                    className="text-[12px] font-mono font-medium tabular-nums w-10 text-right"
-                    style={{ color: scoreColor }}
-                  >
-                    {scorePercent}%
-                  </span>
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="flex items-center justify-center py-12 text-[13px] text-[var(--color-text-tertiary)]">
-            No matches yet
-          </div>
-        )}
-      </div>
+      {matches.length > 0 ? (
+        <Table>
+          <TableHeader>
+            <TableRow className="border-[var(--color-border)] hover:bg-transparent">
+              <TableHead className="text-[11px] text-[var(--color-text-tertiary)] font-medium h-8">Apple</TableHead>
+              <TableHead className="text-[11px] text-[var(--color-text-tertiary)] font-medium h-8">Orange</TableHead>
+              <TableHead className="text-[11px] text-[var(--color-text-tertiary)] font-medium h-8 text-right">Score</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {matches.slice(0, 8).map((match) => {
+              const scorePercent = Math.round(match.score * 100);
+              const scoreColor = getScoreColor(match.score);
+
+              return (
+                <TableRow key={match.id} className="border-[var(--color-border)] hover:bg-[var(--color-bg-subtle)]">
+                  <TableCell className="py-2.5">
+                    <span className="flex items-center gap-1.5">
+                      <span>🍎</span>
+                      <span className="text-[13px] text-[var(--color-text)]">{formatDisplay(match.appleId, match.appleName)}</span>
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-2.5">
+                    <span className="flex items-center gap-1.5">
+                      <span>🍊</span>
+                      <span className="text-[13px] text-[var(--color-text)]">{formatDisplay(match.orangeId, match.orangeName)}</span>
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="w-16 h-1.5 bg-[var(--color-bg-muted)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${scorePercent}%`, backgroundColor: scoreColor }}
+                        />
+                      </div>
+                      <span
+                        className="text-[12px] font-mono font-medium tabular-nums w-10 text-right"
+                        style={{ color: scoreColor }}
+                      >
+                        {scorePercent}%
+                      </span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      ) : (
+        <div className="flex items-center justify-center py-12 text-[13px] text-[var(--color-text-tertiary)]">
+          No matches yet
+        </div>
+      )}
     </div>
   );
 }
