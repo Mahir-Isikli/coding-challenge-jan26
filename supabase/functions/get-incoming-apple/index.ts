@@ -278,58 +278,27 @@ Deno.serve(async (req) => {
           : "Apple satisfies all of orange's preferences!",
       };
 
-      // Step 7: Generate LLM announcements for BOTH parties
-      const [appleAnnouncementResult, orangeAnnouncementResult] = await Promise.all([
-        generateText({
-          system: `You are a witty matchmaker for fruits. Announce matches in a fun, playful way.
-Keep responses to 2-3 sentences. Be charming and slightly humorous.
-IMPORTANT: Be honest about the match quality. If preferences aren't fully met, acknowledge it playfully.`,
-          prompt: `A new apple just arrived looking for love! Here's what they said about themselves:
+      // Step 7: Generate factual announcements (no LLM - dry mode for testing)
+      // See STYLE.md for playful mode prompts
+      matchAnnouncement = `**Match Found: ${bestMatch.orange.id}**
 
-"${appleAttrs}"
+Score: ${(bestMatch.score * 100).toFixed(1)}%
+- Preference: ${(bestMatch.breakdown.preference * 100).toFixed(1)}%
+- Embedding: ${(bestMatch.breakdown.embedding * 100).toFixed(1)}%
+- Collaborative: ${(bestMatch.breakdown.collaborative * 100).toFixed(1)}%
 
-And here's what they're looking for:
-"${applePrefs}"
+${prefSummary.appleGets}
+${prefSummary.appleMisses}`;
 
-I found them a match! An orange with these qualities:
-${JSON.stringify(bestMatch.orange.attributes, null, 2)}
+      orangeAnnouncement = `**New Match: An apple found you!**
 
-MATCH ANALYSIS:
-- Overall compatibility: ${(bestMatch.score * 100).toFixed(1)}%
-- Preference match: ${(bestMatch.breakdown.preference * 100).toFixed(1)}%
-- Vibe/semantic match: ${(bestMatch.breakdown.embedding * 100).toFixed(1)}%
-- Similar apples also liked this orange: ${(bestMatch.breakdown.collaborative * 100).toFixed(1)}%
+Score: ${(bestMatch.score * 100).toFixed(1)}%
+- Preference: ${(bestMatch.breakdown.preference * 100).toFixed(1)}%
+- Embedding: ${(bestMatch.breakdown.embedding * 100).toFixed(1)}%
+- Collaborative: ${(bestMatch.breakdown.collaborative * 100).toFixed(1)}%
 
-Preference details:
-- ${prefSummary.appleGets}
-- ${prefSummary.appleMisses}
-
-Please announce this match! Be honest - if some preferences aren't met, mention it playfully. Focus on what DOES match well.`,
-          maxTokens: 256,
-        }),
-        generateText({
-          system: `You are a witty matchmaker for fruits. You're notifying an existing fruit that someone new has found them as a match.
-Keep responses to 2-3 sentences. Be charming and slightly humorous.`,
-          prompt: `Great news for an orange! A new apple just joined and found them as their best match!
-
-The apple described themselves as:
-"${appleAttrs}"
-
-The apple is looking for:
-"${applePrefs}"
-
-MATCH ANALYSIS:
-- Overall compatibility: ${(bestMatch.score * 100).toFixed(1)}%
-- ${prefSummary.orangeGets}
-- ${prefSummary.orangeMisses}
-
-Please announce to the orange that they've been found by this apple! Mention what makes them compatible.`,
-          maxTokens: 256,
-        }),
-      ]);
-
-      matchAnnouncement = appleAnnouncementResult;
-      orangeAnnouncement = orangeAnnouncementResult;
+${prefSummary.orangeGets}
+${prefSummary.orangeMisses}`;
 
       // Step 8: Broadcast to connected clients via Supabase Realtime
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fwqoutllbbwyhrucsvly.supabase.co";

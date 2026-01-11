@@ -11,8 +11,8 @@ export default function MatchmakingPage() {
   useRealtimeMatches();
 
   return (
-    <main className="max-w-7xl mx-auto px-6 pt-6 pb-6">
-      <div className="grid grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+    <main className="max-w-7xl mx-auto px-6 pt-4 pb-20">
+      <div className="grid grid-cols-3 gap-6 h-[calc(100vh-180px)]">
         {/* Left: Apple Chat */}
         <div className="min-h-0">
           <AppleChat />

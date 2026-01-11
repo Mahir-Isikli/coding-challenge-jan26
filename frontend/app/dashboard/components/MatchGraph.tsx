@@ -86,7 +86,7 @@ export function MatchGraph() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const label = node.type === 'apple' ? '🍎' : '🍊';
+    const label = node.type === 'apple' ? '🍏' : '🍊';
     const fontSize = 16 / globalScale;
     ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = 'center';
@@ -144,44 +144,58 @@ export function MatchGraph() {
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
-      {/* Graph */}
-      <div ref={containerRef} className="flex-1 min-h-[250px] w-full">
-        <ForceGraph2D
-          graphData={data}
-          width={dimensions.width}
-          height={dimensions.height}
-          nodeCanvasObject={nodeCanvasObject}
-          nodeColor={nodeColor}
-          nodeRelSize={8}
-          linkCanvasObject={linkCanvasObject}
-          linkCanvasObjectMode={() => 'replace'}
-          backgroundColor="transparent"
-          cooldownTicks={100}
-          onNodeClick={(node) => console.log('Clicked node:', node)}
-          nodeLabel={(node) => `${(node as GraphNode).type}: ${((node as GraphNode).name || '').slice(0, 100)}`}
-        />
+    <div ref={containerRef} className="h-full w-full">
+      <ForceGraph2D
+        graphData={data}
+        width={dimensions.width}
+        height={dimensions.height}
+        nodeCanvasObject={nodeCanvasObject}
+        nodeColor={nodeColor}
+        nodeRelSize={8}
+        linkCanvasObject={linkCanvasObject}
+        linkCanvasObjectMode={() => 'replace'}
+        backgroundColor="transparent"
+        cooldownTicks={100}
+        onNodeClick={(node) => console.log('Clicked node:', node)}
+        nodeLabel={(node) => `${(node as GraphNode).type}: ${((node as GraphNode).name || '').slice(0, 100)}`}
+      />
+    </div>
+  );
+}
+
+export function MatchGraphLegend() {
+  const [counts, setCounts] = useState({ apples: 0, oranges: 0, matches: 0 });
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const res = await fetch('/api/graph');
+        const json = await res.json();
+        setCounts({
+          apples: json.nodes.filter((n: GraphNode) => n.type === 'apple').length,
+          oranges: json.nodes.filter((n: GraphNode) => n.type === 'orange').length,
+          matches: json.links.length,
+        });
+      } catch (error) {
+        console.error('Failed to fetch graph data:', error);
+      }
+    };
+    fetchCounts();
+  }, []);
+
+  return (
+    <div className="flex items-center justify-evenly text-base text-muted-foreground w-full">
+      <div className="flex items-center gap-1.5">
+        <span className="text-xl">🍏</span>
+        <span>{counts.apples}</span>
       </div>
-      
-      {/* Legend */}
-      <div className="border-t border-[var(--color-border)] px-4 py-3 bg-[var(--color-bg)]">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span>🍎</span>
-              <span className="text-secondary">Apples ({appleCount})</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span>🍊</span>
-              <span className="text-secondary">Oranges ({orangeCount})</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-0.5 bg-[var(--color-text)]" />
-              <span className="text-secondary">Matches ({matchCount})</span>
-            </div>
-          </div>
-          <span className="text-tertiary">Click node for details</span>
-        </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-xl">🍊</span>
+        <span>{counts.oranges}</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-xl">💑</span>
+        <span>{counts.matches}</span>
       </div>
     </div>
   );
