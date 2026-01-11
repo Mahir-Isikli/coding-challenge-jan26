@@ -21,56 +21,58 @@ export function NavDock() {
     clearOrangeFeed();
   };
 
+  const isMatchmaking = pathname === "/matchmaking";
+
   return (
     <div className="sticky top-0 z-50 flex justify-center py-4 bg-[var(--color-bg)]">
-      <div className="flex items-center gap-2">
-        <nav
-          className="flex items-center gap-1 rounded-full bg-neutral-200/70 p-1"
-          role="tablist"
-        >
-          {tabs.map((tab) => {
-            const isActive = pathname === tab.href;
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                role="tab"
-                aria-selected={isActive}
-                className={cn(
-                  "relative px-4 py-2 text-sm font-medium transition-colors rounded-full",
-                  isActive
-                    ? "text-[var(--color-text)]"
-                    : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
-                )}
-              >
-                {isActive && (
-                  <motion.span
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-white rounded-full shadow-sm"
-                    style={{ zIndex: -1 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 30,
-                    }}
-                  />
-                )}
-                {tab.label}
-              </Link>
-            );
-          })}
-        </nav>
+      <nav
+        className="flex items-center gap-6"
+        role="tablist"
+      >
+        {tabs.map((tab) => {
+          const isActive = pathname === tab.href;
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              role="tab"
+              aria-selected={isActive}
+              className={cn(
+                "relative px-1 py-2 text-sm font-medium transition-colors",
+                isActive
+                  ? "text-neutral-900"
+                  : "text-neutral-400 hover:text-neutral-600"
+              )}
+            >
+              {tab.label}
+              {isActive && (
+                <motion.span
+                  layoutId="activeTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-neutral-900"
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 30,
+                  }}
+                />
+              )}
+            </Link>
+          );
+        })}
 
-        {pathname === "/matchmaking" && (
-          <button
-            onClick={handleNewMatchmaking}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-full bg-white shadow-sm border border-neutral-200/60 text-[var(--color-text)] hover:bg-neutral-50 transition-colors"
-          >
-            <Plus className="size-4" />
-            New Session
-          </button>
-        )}
-      </div>
+        <button
+          onClick={handleNewMatchmaking}
+          className={cn(
+            "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full border transition-all duration-200",
+            isMatchmaking
+              ? "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50 hover:border-neutral-300"
+              : "bg-transparent border-transparent text-transparent pointer-events-none"
+          )}
+        >
+          <Plus className="size-4" />
+          New Session
+        </button>
+      </nav>
     </div>
   );
 }
