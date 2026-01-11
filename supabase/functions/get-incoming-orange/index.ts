@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
     }
 
     let matchAnnouncement = "No matching apples found yet.";
+    let appleAnnouncement = "";
 
     if (bestMatch) {
       // Step 6: Create RELATE edge for the match
@@ -90,11 +91,12 @@ Deno.serve(async (req) => {
         };
       `);
 
-      // Step 7: Generate LLM announcement
-      matchAnnouncement = await generateText({
-        system: `You are a witty matchmaker for fruits. Announce matches in a fun, playful way.
+      // Step 7: Generate LLM announcements for BOTH parties
+      const [orangeAnnouncementResult, appleAnnouncementResult] = await Promise.all([
+        generateText({
+          system: `You are a witty matchmaker for fruits. Announce matches in a fun, playful way.
 Keep responses to 2-3 sentences. Be charming and slightly humorous.`,
-        prompt: `A new orange just arrived looking for love! Here's what they said about themselves:
+          prompt: `A new orange just arrived looking for love! Here's what they said about themselves:
 
 "${orangeAttrs}"
 
@@ -107,8 +109,62 @@ ${JSON.stringify(bestMatch.apple.attributes, null, 2)}
 The compatibility score is ${(bestMatch.score * 100).toFixed(1)}%.
 
 Please announce this match in a fun way!`,
-        maxTokens: 256,
-      });
+          maxTokens: 256,
+        }),
+        generateText({
+          system: `You are a witty matchmaker for fruits. You're notifying an existing fruit that someone new has found them as a match.
+Keep responses to 2-3 sentences. Be charming and slightly humorous.`,
+          prompt: `Great news for an apple! A new orange just joined and found them as their best match!
+
+The orange described themselves as:
+"${orangeAttrs}"
+
+The orange is looking for:
+"${orangePrefs}"
+
+The compatibility score is ${(bestMatch.score * 100).toFixed(1)}%.
+
+Please announce to the apple that they've been found by this orange!`,
+          maxTokens: 256,
+        }),
+      ]);
+
+      matchAnnouncement = orangeAnnouncementResult;
+      appleAnnouncement = appleAnnouncementResult;
+
+      // Step 8: Broadcast to connected clients via Supabase Realtime
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fwqoutllbbwyhrucsvly.supabase.co";
+      const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
+
+      if (SUPABASE_ANON_KEY) {
+        try {
+          await fetch(`${SUPABASE_URL}/realtime/v1/api/broadcast`, {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_ANON_KEY,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messages: [{
+                topic: "matches",
+                event: "new_match",
+                payload: {
+                  appleId: bestMatch.apple.id,
+                  orangeId: `fruit:${orangeId}`,
+                  score: bestMatch.score,
+                  announcements: {
+                    forApple: appleAnnouncement,
+                    forOrange: matchAnnouncement,
+                  },
+                },
+              }],
+            }),
+          });
+          console.log("[Realtime] Broadcast sent for match");
+        } catch (broadcastError) {
+          console.error("[Realtime] Failed to broadcast:", broadcastError);
+        }
+      }
     }
 
     return new Response(

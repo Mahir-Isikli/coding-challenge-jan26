@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Header } from "@/components/layout/Header";
+import { TabNav } from "@/components/layout/TabNav";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -15,8 +17,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fruit Matchmaking",
-  description: "A matchmaking system that connects apples to oranges based on vector similarity.",
+  title: "Clera Matchmaking",
+  description: "AI-powered talent matching that connects the right people to the right opportunities.",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +32,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
-        {children}
+        <div className="min-h-screen bg-[var(--color-bg)]">
+          <Header />
+          <TabNav />
+          {children}
+        </div>
       </body>
     </html>
   );

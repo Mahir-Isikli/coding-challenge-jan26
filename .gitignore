@@ -48,3 +48,8 @@ coverage/
 .vercel
 
 .env
+
+
+#Temp Files
+tmp
+history.txt

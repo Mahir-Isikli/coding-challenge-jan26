@@ -1,23 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
-// =============================================================================
-// ⚠️  DISCLAIMER
-// =============================================================================
-// This store structure is just a STARTING POINT. Feel free to:
-// - Completely redesign the state shape
-// - Remove types/fields that don't fit your solution
-// - Add your own types and actions
-// - Use a different state management approach entirely
-//
-// The types below are examples based on what we imagined - your implementation
-// may look completely different, and that's great!
-// =============================================================================
-
-// =============================================================================
-// TYPES (Examples - modify or replace these!)
-// =============================================================================
-
 export interface Apple {
   id: string;
   name: string;
@@ -54,23 +37,50 @@ export interface Conversation {
 
 export interface ConversationMessage {
   id: string;
-  role: "system" | "user" | "assistant";
+  role: "system" | "user" | "assistant" | "match";
   content: string;
   timestamp: Date;
 }
 
-// =============================================================================
-// STORE STATE
-// =============================================================================
+export interface MatchNotification {
+  id: string;
+  appleId: string;
+  orangeId: string;
+  score: number;
+  announcements: {
+    forApple: string;
+    forOrange: string;
+  };
+  timestamp: Date;
+}
+
+export interface FeedMessage {
+  id: string;
+  type: "system" | "apple" | "orange" | "match";
+  content: string;
+  fruitId?: string;
+  matchData?: {
+    appleId: string;
+    orangeId: string;
+    score: number;
+  };
+  timestamp: Date;
+}
 
 interface MatchmakingState {
-  // Data
   apples: Apple[];
   oranges: Orange[];
   matches: Match[];
   conversations: Conversation[];
+  notifications: MatchNotification[];
+  
+  // Split feed messages by panel
+  appleFeedMessages: FeedMessage[];
+  orangeFeedMessages: FeedMessage[];
+  
+  // Legacy (kept for backward compatibility)
+  feedMessages: FeedMessage[];
 
-  // UI State
   activeConversationId: string | null;
   isLoading: boolean;
   error: string | null;
@@ -85,28 +95,43 @@ interface MatchmakingState {
     conversationId: string,
     message: ConversationMessage
   ) => void;
+  addNotification: (notification: MatchNotification) => void;
+  
+  // Panel-specific feed actions
+  addAppleFeedMessage: (message: FeedMessage) => void;
+  addOrangeFeedMessage: (message: FeedMessage) => void;
+  clearAppleFeed: () => void;
+  clearOrangeFeed: () => void;
+  
+  // Legacy
+  addFeedMessage: (message: FeedMessage) => void;
+  clearFeed: () => void;
+  
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
 }
 
-// =============================================================================
-// INITIAL STATE
-// =============================================================================
+const createWelcomeMessage = (): FeedMessage => ({
+  id: "welcome",
+  type: "system" as const,
+  content: "Ready. Add a fruit to start matching.",
+  timestamp: new Date(),
+});
 
 const initialState = {
-  apples: [],
-  oranges: [],
-  matches: [],
-  conversations: [],
+  apples: [] as Apple[],
+  oranges: [] as Orange[],
+  matches: [] as Match[],
+  conversations: [] as Conversation[],
+  notifications: [] as MatchNotification[],
+  appleFeedMessages: [createWelcomeMessage()] as FeedMessage[],
+  orangeFeedMessages: [createWelcomeMessage()] as FeedMessage[],
+  feedMessages: [createWelcomeMessage()] as FeedMessage[],
   activeConversationId: null,
   isLoading: false,
   error: null,
 };
-
-// =============================================================================
-// STORE
-// =============================================================================
 
 export const useMatchmakingStore = create<MatchmakingState>()(
   devtools(
@@ -139,6 +164,64 @@ export const useMatchmakingStore = create<MatchmakingState>()(
             ),
           })),
 
+        addNotification: (notification) =>
+          set((state) => ({
+            notifications: [...state.notifications, notification],
+          })),
+
+        // Panel-specific feed actions
+        addAppleFeedMessage: (message) =>
+          set((state) => ({
+            appleFeedMessages: [...state.appleFeedMessages, message],
+          })),
+
+        addOrangeFeedMessage: (message) =>
+          set((state) => ({
+            orangeFeedMessages: [...state.orangeFeedMessages, message],
+          })),
+
+        clearAppleFeed: () =>
+          set({
+            appleFeedMessages: [
+              {
+                id: "cleared-apple",
+                type: "system",
+                content: "Cleared.",
+                timestamp: new Date(),
+              },
+            ],
+          }),
+
+        clearOrangeFeed: () =>
+          set({
+            orangeFeedMessages: [
+              {
+                id: "cleared-orange",
+                type: "system",
+                content: "Cleared.",
+                timestamp: new Date(),
+              },
+            ],
+          }),
+
+        // Legacy
+        addFeedMessage: (message) =>
+          set((state) => ({
+            feedMessages: [...state.feedMessages, message],
+          })),
+
+        clearFeed: () =>
+          set({
+            feedMessages: [
+              {
+                id: "cleared",
+                type: "system",
+                content: "Cleared.",
+                timestamp: new Date(),
+              },
+            ],
+          }),
+
         setLoading: (isLoading) => set({ isLoading }),
 
         setError: (error) => set({ error }),
@@ -147,10 +230,13 @@ export const useMatchmakingStore = create<MatchmakingState>()(
       }),
       {
         name: "matchmaking-storage",
-        // Only persist specific fields
         partialize: (state) => ({
           conversations: state.conversations,
           matches: state.matches,
+          notifications: state.notifications,
+          feedMessages: state.feedMessages,
+          appleFeedMessages: state.appleFeedMessages,
+          orangeFeedMessages: state.orangeFeedMessages,
         }),
       }
     ),
@@ -158,11 +244,7 @@ export const useMatchmakingStore = create<MatchmakingState>()(
   )
 );
 
-// =============================================================================
-// SELECTORS
-// =============================================================================
-
-// Example selectors for computed values
+// Selectors
 export const selectActiveConversation = (state: MatchmakingState) =>
   state.conversations.find((c) => c.id === state.activeConversationId);
 
@@ -175,4 +257,3 @@ export const selectSuccessRate = (state: MatchmakingState) => {
     ? Math.round((confirmed / state.matches.length) * 100)
     : 0;
 };
-
