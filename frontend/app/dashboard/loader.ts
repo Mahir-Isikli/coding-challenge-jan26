@@ -37,11 +37,22 @@ interface FruitAttributes {
   hasChemicals?: boolean | null;
 }
 
+interface FruitPreferences {
+  size?: { min?: number; max?: number } | null;
+  weight?: { min?: number; max?: number } | null;
+  hasStem?: boolean | null;
+  hasLeaf?: boolean | null;
+  hasWorm?: boolean | null;
+  shineFactor?: string | string[] | null;
+  hasChemicals?: boolean | null;
+}
+
 export interface FruitBreakdownItem {
   id: string;
   type: string;
   name: string;
   attributes?: FruitAttributes;
+  preferences?: FruitPreferences;
   matchCount: number;
   bestMatch: FruitMatchInfo | null;
   runnerUps: FruitMatchInfo[];

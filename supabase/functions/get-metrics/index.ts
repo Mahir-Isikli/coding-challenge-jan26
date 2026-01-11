@@ -18,11 +18,22 @@ interface FruitAttributes {
   hasChemicals?: boolean | null;
 }
 
+interface FruitPreferences {
+  size?: { min?: number; max?: number } | null;
+  weight?: { min?: number; max?: number } | null;
+  hasStem?: boolean | null;
+  hasLeaf?: boolean | null;
+  hasWorm?: boolean | null;
+  shineFactor?: string | string[] | null;
+  hasChemicals?: boolean | null;
+}
+
 interface FruitRecord {
   id: string;
   type: string;
   name?: string;
   attributes?: FruitAttributes;
+  preferences?: FruitPreferences;
   created_at?: string;
 }
 
@@ -105,9 +116,9 @@ Deno.serve(async (req) => {
       SELECT count() as count FROM matched WHERE score < 0.7 GROUP ALL;
     `);
 
-    // Get all fruits with their match data including attributes
+    // Get all fruits with their match data including attributes and preferences
     const allFruitsResult = await db.query<FruitRecord[]>(`
-      SELECT id, type, name, attributes FROM fruit ORDER BY type, name;
+      SELECT id, type, name, attributes, preferences FROM fruit ORDER BY type, name;
     `);
     const allFruits = allFruitsResult[0] || [];
 
@@ -159,6 +170,7 @@ Deno.serve(async (req) => {
         type: fruit.type,
         name: fruit.name || fruit.id.split(':')[1],
         attributes: fruit.attributes,
+        preferences: fruit.preferences,
         matchCount: matches.length,
         bestMatch: matches[0] || null,
         runnerUps: matches.slice(1, 5), // Next 4 best matches (total top 5)
