@@ -15,9 +15,7 @@ cd coding-challenge-jan26
 pnpm install
 cd frontend && pnpm install && cd ..
 
-# 2. Set up environment variables
-cp .env.example .env
-# Edit .env with your credentials (see Environment Variables section)
+# 2. Set up environment variables (see below)
 
 # 3. Start the frontend
 cd frontend && pnpm dev
@@ -27,7 +25,9 @@ The app runs at http://localhost:3000. Edge functions are deployed to hosted Sup
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in:
+You need **two** env files:
+
+### Root `.env` (for scripts and edge functions)
 
 ```bash
 # SurrealDB Cloud
@@ -37,15 +37,27 @@ SURREAL_DATABASE=your-database
 SURREAL_USER=root
 SURREAL_PASS=your-password
 
-# OpenAI (for embeddings)
-OPENAI_API_KEY=sk-...
-
-# Anthropic (for LLM match announcements)
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Supabase (for edge functions & realtime)
+# Supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
+
+# Anthropic (for edge functions if running locally)
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Frontend `frontend/.env.local` (for Next.js)
+
+```bash
+# Supabase (NEXT_PUBLIC_ prefix exposes to client)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Anthropic (server-side only, for API routes)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# SurrealDB (server-side only, for graph API)
+SURREAL_USER=root
+SURREAL_PASS=your-password
 ```
 
 ## Problem Statement
@@ -65,8 +77,7 @@ We're going to be creating a small fullstack application that will encompass eve
 | **State** | Zustand | Client-side state with persistence |
 | **Utilities** | Effect | Type-safe error handling, retries, timeouts |
 | **Backend** | Supabase Edge Functions | Deno runtime, hosted deployment |
-| **Database** | SurrealDB Cloud | Graph DB with vector search |
-| **Embeddings** | OpenAI | `text-embedding-3-small` for semantic matching |
+| **Database** | SurrealDB Cloud | Graph database for fruits and matches |
 | **LLM** | Anthropic Claude | Match announcement generation |
 
 ## Data Setup
@@ -78,12 +89,10 @@ The `data/raw_apples_and_oranges.json` file contains 40 seed fruits (20 apples, 
 If starting fresh with a new SurrealDB instance:
 
 ```bash
-# 1. Load raw data into SurrealDB (manual or via script)
+# Load fruit data into SurrealDB
+node scripts/seed-data.mjs
 
-# 2. Generate embeddings for all fruits
-node scripts/seed-embeddings.mjs
-
-# 3. Create initial match relationships (optional)
+# Optionally create initial matches
 node scripts/batch-match.mjs --threshold=0.75
 ```
 
@@ -91,7 +100,7 @@ node scripts/batch-match.mjs --threshold=0.75
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/seed-embeddings.mjs` | Generates OpenAI embeddings for all fruits in the database |
+| `scripts/seed-data.mjs` | Loads fruits from `data/raw_apples_and_oranges.json` into SurrealDB |
 | `scripts/batch-match.mjs` | Creates match relationships for fruit pairs above a score threshold |
 
 ## Core System
@@ -101,7 +110,7 @@ Two edge functions handle the matchmaking: `get-incoming-apple` and `get-incomin
 ### Task Flow
 
 1. **Generate a new fruit** - Random attributes via normal distribution, relaxed preferences
-2. **Store in SurrealDB** - With computed description and embedding
+2. **Store in SurrealDB** - With computed description
 3. **Bidirectional matching** - Score = avg(apple→orange satisfaction, orange→apple satisfaction)
 4. **LLM announcement** - Claude generates playful match messages
 5. **Realtime broadcast** - Results pushed to both panels via Supabase Realtime
@@ -189,13 +198,13 @@ const result = await runEffect(
 │   ├── _shared/
 │   │   ├── generateFruit.ts           # Fruit generation & communication
 │   │   ├── surreal.ts                 # SurrealDB HTTP client
-│   │   └── ai.ts                      # OpenAI/Anthropic clients
+│   │   └── ai.ts                      # Anthropic client
 │   ├── get-incoming-apple/            # Apple edge function
 │   ├── get-incoming-orange/           # Orange edge function
 │   └── get-metrics/                   # Dashboard metrics
 │
 ├── scripts/
-│   ├── seed-embeddings.mjs            # Generate embeddings
+│   ├── seed-data.mjs                  # Load fruits into SurrealDB
 │   └── batch-match.mjs                # Bulk match creation
 │
 ├── data/
