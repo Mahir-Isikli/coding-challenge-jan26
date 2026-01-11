@@ -41,7 +41,9 @@ export interface MetricsResponse {
   recentMatches: Array<{
     id: string;
     appleId: string;
+    appleName?: string;
     orangeId: string;
+    orangeName?: string;
     score: number;
     matchedAt: string;
   }>;

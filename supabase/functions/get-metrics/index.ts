@@ -20,6 +20,8 @@ interface MatchRecord {
   out: string;
   score: number;
   matched_at?: string;
+  apple_name?: string;
+  orange_name?: string;
 }
 
 Deno.serve(async (req) => {
@@ -52,9 +54,9 @@ Deno.serve(async (req) => {
     `);
     const avgScore = avgScoreResult[0]?.[0]?.avg_score ?? 0;
 
-    // Get recent matches with details
+    // Get recent matches with details including fruit names
     const recentMatchesResult = await db.query<MatchRecord[]>(`
-      SELECT *, <-fruit as apple, ->fruit as orange FROM matched ORDER BY matched_at DESC LIMIT 10;
+      SELECT *, in.name as apple_name, out.name as orange_name FROM matched ORDER BY matched_at DESC LIMIT 10;
     `);
     const recentMatches = recentMatchesResult[0] || [];
 
@@ -103,7 +105,9 @@ Deno.serve(async (req) => {
         recentMatches: recentMatches.map((m: MatchRecord) => ({
           id: m.id,
           appleId: m.in,
+          appleName: m.apple_name,
           orangeId: m.out,
+          orangeName: m.orange_name,
           score: m.score,
           matchedAt: m.matched_at,
         })),
