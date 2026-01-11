@@ -6,7 +6,9 @@ import { useMatchmakingStore, type MatchNotification, type FeedMessage } from ".
 
 interface BroadcastPayload {
   appleId: string;
+  appleName?: string;
   orangeId: string;
+  orangeName?: string;
   score: number;
   announcements: {
     forApple: string;
@@ -71,7 +73,9 @@ export function useRealtimeMatches() {
         addMatch({
           id: `match-${Date.now()}`,
           appleId: payload.appleId,
+          appleName: payload.appleName,
           orangeId: payload.orangeId,
+          orangeName: payload.orangeName,
           score: payload.score,
           status: "confirmed",
           createdAt: new Date(),

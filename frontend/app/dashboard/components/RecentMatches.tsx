@@ -1,7 +1,9 @@
 interface Match {
   id: string;
   appleId: string;
+  appleName?: string;
   orangeId: string;
+  orangeName?: string;
   score: number;
 }
 
@@ -9,7 +11,9 @@ interface RecentMatchesProps {
   matches: Match[];
 }
 
-function formatId(id: string): string {
+function formatDisplay(id: string, name?: string): string {
+  if (name) return name;
+  // Fallback to ID-based display
   const parts = id.split(":")[1] || id;
   const numMatch = parts.match(/_(\d+)$/);
   if (!numMatch) return "?";
@@ -52,12 +56,12 @@ export function RecentMatches({ matches }: RecentMatchesProps) {
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className="flex items-center gap-1.5">
                     <span>🍎</span>
-                    <span className="font-mono text-[13px] text-[var(--color-text)]">{formatId(match.appleId)}</span>
+                    <span className="text-[13px] text-[var(--color-text)] truncate max-w-[80px]">{formatDisplay(match.appleId, match.appleName)}</span>
                   </span>
                   <span className="text-[var(--color-text-tertiary)]">→</span>
                   <span className="flex items-center gap-1.5">
                     <span>🍊</span>
-                    <span className="font-mono text-[13px] text-[var(--color-text)]">{formatId(match.orangeId)}</span>
+                    <span className="text-[13px] text-[var(--color-text)] truncate max-w-[80px]">{formatDisplay(match.orangeId, match.orangeName)}</span>
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

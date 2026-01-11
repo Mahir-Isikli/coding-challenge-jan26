@@ -31,11 +31,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Scoring weights for hybrid algorithm
+// Scoring weights for matching algorithm
+// Note: Collaborative filtering removed - not suitable for two-sided matching markets
+// where both parties must agree (unlike Netflix where only user preferences matter)
 const WEIGHTS = {
-  PREFERENCE: 0.40,     // How well do attributes satisfy preferences (both directions)
-  EMBEDDING: 0.35,      // Semantic similarity from descriptions
-  COLLABORATIVE: 0.25,  // What similar apples liked (graph-based)
+  PREFERENCE: 0.55,     // How well do attributes satisfy preferences (both directions)
+  EMBEDDING: 0.45,      // Semantic similarity from descriptions
 };
 
 /**
@@ -101,10 +102,27 @@ function calculatePreferenceSatisfaction(
 interface FruitRecord {
   id: string;
   type: string;
+  name?: string;
   attributes: Fruit["attributes"];
   preferences: Fruit["preferences"];
   embedding?: number[];
   description?: string;
+}
+
+/**
+ * Format a fruit's display name - use actual name if available,
+ * otherwise create a friendly format like "Orange #24" from the ID
+ */
+function formatFruitName(fruit: FruitRecord): string {
+  if (fruit.name) return fruit.name;
+  
+  // Extract number from ID like "fruit:orange_24" -> "Orange #24"
+  const match = fruit.id.match(/fruit:(apple|orange)_(\d+)/);
+  if (match) {
+    const type = match[1].charAt(0).toUpperCase() + match[1].slice(1);
+    return `${type} #${match[2]}`;
+  }
+  return fruit.id;
 }
 
 Deno.serve(async (req) => {
@@ -113,8 +131,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Step 1: Generate a new apple instance
-    const apple = generateApple();
+    // Step 1: Generate a new apple instance with unique name
+    const apple = await generateApple(db);
 
     // Step 2: Capture the apple's communication
     const appleAttrs = communicateAttributes(apple);
@@ -129,6 +147,7 @@ Deno.serve(async (req) => {
     await db.query<FruitRecord[]>(`
       CREATE fruit:${appleId} CONTENT {
         type: "apple",
+        name: ${JSON.stringify(apple.name)},
         attributes: ${JSON.stringify(apple.attributes)},
         preferences: ${JSON.stringify(apple.preferences)},
         embedding: ${JSON.stringify(embedding)},
@@ -145,40 +164,13 @@ Deno.serve(async (req) => {
     `);
     const orangeList = oranges[0] || [];
 
-    // 5b. Collaborative Filtering via Graph Traversal:
-    // Find similar apples (by embedding) and see what oranges they matched with
-    const similarApplesResult = await db.query<FruitRecord[]>(`
-      LET $query_embedding = ${JSON.stringify(embedding)};
-      SELECT *, vector::similarity::cosine(embedding, $query_embedding) AS similarity 
-      FROM fruit 
-      WHERE type = "apple" 
-      AND embedding <|5|> $query_embedding;
-    `);
-    const similarApples = similarApplesResult[0] || [];
-
-    // Get oranges that similar apples matched with (collaborative signal via graph)
-    const collaborativeScores = new Map<string, number[]>();
-    for (const similarApple of similarApples) {
-      // Graph traversal: similar_apple -> matched -> orange
-      const matchedOrangesResult = await db.query<Array<{ out: string; score: number }>>(`
-        SELECT out, score FROM matched WHERE in = ${similarApple.id};
-      `);
-      for (const match of (matchedOrangesResult[0] || [])) {
-        if (!collaborativeScores.has(match.out)) {
-          collaborativeScores.set(match.out, []);
-        }
-        collaborativeScores.get(match.out)!.push(match.score);
-      }
-    }
-
-    // 5c. Calculate hybrid scores for each orange
+    // 5b. Calculate scores for each orange
     interface MatchCandidate {
       orange: FruitRecord;
       score: number;
       breakdown: {
         preference: number;
         embedding: number;
-        collaborative: number;
         appleToOrange: { score: number; satisfied: string[]; violated: string[] };
         orangeToApple: { score: number; satisfied: string[]; violated: string[] };
       };
@@ -202,25 +194,17 @@ Deno.serve(async (req) => {
       // EMBEDDING SCORE (semantic/vibe match from descriptions)
       const embeddingScore = cosineSimilarity(embedding, orange.embedding);
 
-      // COLLABORATIVE SCORE (what similar apples liked - graph-based)
-      const collabScoresForOrange = collaborativeScores.get(orange.id) || [];
-      const collaborativeScore = collabScoresForOrange.length > 0
-        ? collabScoresForOrange.reduce((a, b) => a + b, 0) / collabScoresForOrange.length
-        : 0;
-
-      // HYBRID SCORE
-      const hybridScore = 
+      // FINAL SCORE (preference + embedding)
+      const finalScore = 
         (preferenceScore * WEIGHTS.PREFERENCE) +
-        (embeddingScore * WEIGHTS.EMBEDDING) +
-        (collaborativeScore * WEIGHTS.COLLABORATIVE);
+        (embeddingScore * WEIGHTS.EMBEDDING);
 
       const candidate: MatchCandidate = {
         orange,
-        score: hybridScore,
+        score: finalScore,
         breakdown: {
           preference: preferenceScore,
           embedding: embeddingScore,
-          collaborative: collaborativeScore,
           appleToOrange,
           orangeToApple,
         },
@@ -228,23 +212,30 @@ Deno.serve(async (req) => {
       
       candidates.push(candidate);
 
-      if (!bestMatch || hybridScore > bestMatch.score) {
+      if (!bestMatch || finalScore > bestMatch.score) {
         bestMatch = candidate;
       }
     }
 
-    console.log("[Hybrid Match]", bestMatch ? {
+    // Sort candidates by score (descending) and take top 5
+    const rankedCandidates = candidates
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+    
+    bestMatch = rankedCandidates[0] || null;
+
+    console.log("[Match]", bestMatch ? {
       orangeId: bestMatch.orange.id,
       finalScore: bestMatch.score.toFixed(3),
       breakdown: {
         preference: `${(bestMatch.breakdown.preference * 100).toFixed(1)}%`,
         embedding: `${(bestMatch.breakdown.embedding * 100).toFixed(1)}%`,
-        collaborative: `${(bestMatch.breakdown.collaborative * 100).toFixed(1)}%`,
       },
       preferenceDetails: {
         appleToOrange: bestMatch.breakdown.appleToOrange,
         orangeToApple: bestMatch.breakdown.orangeToApple,
-      }
+      },
+      rankedCount: rankedCandidates.length,
     } : "No match found");
 
     let matchAnnouncement = "No matching oranges found yet.";
@@ -257,7 +248,6 @@ Deno.serve(async (req) => {
           score: ${bestMatch.score},
           preference_score: ${bestMatch.breakdown.preference},
           embedding_score: ${bestMatch.breakdown.embedding},
-          collaborative_score: ${bestMatch.breakdown.collaborative},
           matched_at: time::now()
         };
       `);
@@ -280,22 +270,30 @@ Deno.serve(async (req) => {
 
       // Step 7: Generate factual announcements (no LLM - dry mode for testing)
       // See STYLE.md for playful mode prompts
-      matchAnnouncement = `**Match Found: ${bestMatch.orange.id}**
+      const orangeName = formatFruitName(bestMatch.orange);
+      
+      // Build runner-ups list (positions 2-5)
+      const runnerUps = rankedCandidates.slice(1).map((c, i) => {
+        return `${i + 2}. ${formatFruitName(c.orange)} (${(c.score * 100).toFixed(1)}%)`;
+      });
+      const runnerUpsText = runnerUps.length > 0 
+        ? `\n\n**Other Candidates:**\n${runnerUps.join("\n")}`
+        : "";
+
+      matchAnnouncement = `**Match Found: ${orangeName}**
 
 Score: ${(bestMatch.score * 100).toFixed(1)}%
 - Preference: ${(bestMatch.breakdown.preference * 100).toFixed(1)}%
 - Embedding: ${(bestMatch.breakdown.embedding * 100).toFixed(1)}%
-- Collaborative: ${(bestMatch.breakdown.collaborative * 100).toFixed(1)}%
 
 ${prefSummary.appleGets}
-${prefSummary.appleMisses}`;
+${prefSummary.appleMisses}${runnerUpsText}`;
 
-      orangeAnnouncement = `**New Match: An apple found you!**
+      orangeAnnouncement = `**New Match: ${apple.name} found you!**
 
 Score: ${(bestMatch.score * 100).toFixed(1)}%
 - Preference: ${(bestMatch.breakdown.preference * 100).toFixed(1)}%
 - Embedding: ${(bestMatch.breakdown.embedding * 100).toFixed(1)}%
-- Collaborative: ${(bestMatch.breakdown.collaborative * 100).toFixed(1)}%
 
 ${prefSummary.orangeGets}
 ${prefSummary.orangeMisses}`;
@@ -318,7 +316,9 @@ ${prefSummary.orangeMisses}`;
                 event: "new_match",
                 payload: {
                   appleId: `fruit:${appleId}`,
+                  appleName: apple.name,
                   orangeId: bestMatch.orange.id,
+                  orangeName: orangeName,
                   score: bestMatch.score,
                   announcements: {
                     forApple: matchAnnouncement,
@@ -335,22 +335,37 @@ ${prefSummary.orangeMisses}`;
       }
     }
 
+    // Build ranked candidates for response
+    const rankedForResponse = rankedCandidates.map((c, i) => ({
+      rank: i + 1,
+      orangeId: c.orange.id,
+      orangeName: formatFruitName(c.orange),
+      score: c.score,
+      breakdown: {
+        preference: c.breakdown.preference,
+        embedding: c.breakdown.embedding,
+      },
+    }));
+
     return new Response(
       JSON.stringify({
         message: "Apple received and processed",
         apple: {
           id: `fruit:${appleId}`,
+          name: apple.name,
           description: fullDescription,
         },
         match: bestMatch
           ? {
               orangeId: bestMatch.orange.id,
+              orangeName: formatFruitName(bestMatch.orange),
               score: bestMatch.score,
               announcement: matchAnnouncement,
               orangeAnnouncement: orangeAnnouncement,
               breakdown: bestMatch.breakdown,
             }
           : null,
+        rankedCandidates: rankedForResponse,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

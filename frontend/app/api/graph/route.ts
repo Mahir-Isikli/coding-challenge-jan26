@@ -15,9 +15,32 @@ interface SurrealResponse<T> {
   time: string;
 }
 
+interface FruitAttributes {
+  size: number | null;
+  weight: number | null;
+  hasStem: boolean | null;
+  hasLeaf: boolean | null;
+  hasWorm: boolean | null;
+  shineFactor: 'dull' | 'neutral' | 'shiny' | 'extraShiny' | null;
+  hasChemicals: boolean | null;
+}
+
+interface FruitPreferences {
+  size?: { min?: number; max?: number };
+  weight?: { min?: number; max?: number };
+  hasStem?: boolean;
+  hasLeaf?: boolean;
+  hasWorm?: boolean;
+  shineFactor?: string | string[];
+  hasChemicals?: boolean;
+}
+
 interface FruitRecord {
   id: string;
   type: 'apple' | 'orange';
+  name?: string;
+  attributes?: FruitAttributes;
+  preferences?: FruitPreferences;
   description?: string;
 }
 
@@ -52,9 +75,9 @@ async function querySurreal<T>(sql: string): Promise<T[]> {
 
 export async function GET() {
   try {
-    // Get all fruits
+    // Get all fruits with full data
     const fruitsResult = await querySurreal<FruitRecord[]>(`
-      SELECT id, type, description FROM fruit;
+      SELECT id, type, name, attributes, preferences FROM fruit;
     `);
     const fruits = fruitsResult[0] || [];
 
@@ -64,11 +87,13 @@ export async function GET() {
     `);
     const matches = matchesResult[0] || [];
 
-    // Transform to graph format
+    // Transform to graph format with full data for tooltips
     const nodes = fruits.map(f => ({
       id: f.id,
       type: f.type,
-      name: f.description?.slice(0, 60) || f.id,
+      name: f.name || f.id.split(':')[1] || f.id,
+      attributes: f.attributes,
+      preferences: f.preferences,
     }));
 
     const links = matches.map(m => ({
