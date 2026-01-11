@@ -5,16 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Markdown } from "@/app/dashboard/components/Markdown";
 import { useMatchmakingStore, type FeedMessage } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardAction } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { Trash2 } from "lucide-react";
+
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fwqoutllbbwyhrucsvly.supabase.co";
 
 export function OrangeChat() {
-  const { orangeFeedMessages, addOrangeFeedMessage, clearOrangeFeed } = useMatchmakingStore();
+  const { orangeFeedMessages, addOrangeFeedMessage } = useMatchmakingStore();
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -66,18 +66,12 @@ export function OrangeChat() {
   return (
     <Card className="flex flex-col h-full py-0 gap-0">
       <CardHeader className="px-4 py-3 flex items-center justify-center border-b flex-shrink-0">
-        <div className="flex items-center justify-between w-full">
-          <div className="w-8" />
-          <CardTitle className="text-sm flex items-center justify-center gap-2">
-            Orange Feed
-            {isLoading && (
-              <Badge variant="secondary" className="text-xs py-0 h-5">processing...</Badge>
-            )}
-          </CardTitle>
-          <Button variant="ghost" size="icon-sm" className="size-8" onClick={clearOrangeFeed}>
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
+        <CardTitle className="text-sm flex items-center justify-center gap-2">
+          Orange Feed
+          {isLoading && (
+            <Badge variant="secondary" className="text-xs py-0 h-5">processing...</Badge>
+          )}
+        </CardTitle>
       </CardHeader>
 
       <CardContent className="flex-1 overflow-hidden p-0 flex flex-col">
