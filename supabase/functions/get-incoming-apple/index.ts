@@ -238,11 +238,8 @@ Deno.serve(async (req) => {
       rankedCount: rankedCandidates.length,
     } : "No match found");
 
-    let matchAnnouncement = "No matching oranges found yet.";
-    let orangeAnnouncement = "";
-
     if (bestMatch) {
-      // Step 6: Create RELATE edge for the match with detailed breakdown
+      // Create RELATE edge for the match with detailed breakdown
       await db.query(`
         RELATE fruit:${appleId} -> matched -> ${bestMatch.orange.id} CONTENT {
           score: ${bestMatch.score},
@@ -251,86 +248,6 @@ Deno.serve(async (req) => {
           matched_at: time::now()
         };
       `);
-
-      // Build preference satisfaction summary for the LLM
-      const prefSummary = {
-        appleGets: bestMatch.breakdown.appleToOrange.satisfied.length > 0 
-          ? `Preferences met: ${bestMatch.breakdown.appleToOrange.satisfied.join(", ")}`
-          : "No specific preferences checked",
-        appleMisses: bestMatch.breakdown.appleToOrange.violated.length > 0
-          ? `Preferences NOT met: ${bestMatch.breakdown.appleToOrange.violated.join(", ")}`
-          : "All preferences satisfied!",
-        orangeGets: bestMatch.breakdown.orangeToApple.satisfied.length > 0
-          ? `Orange's preferences met: ${bestMatch.breakdown.orangeToApple.satisfied.join(", ")}`
-          : "No specific preferences from orange",
-        orangeMisses: bestMatch.breakdown.orangeToApple.violated.length > 0
-          ? `Orange's preferences NOT met: ${bestMatch.breakdown.orangeToApple.violated.join(", ")}`
-          : "Apple satisfies all of orange's preferences!",
-      };
-
-      // Step 7: Generate factual announcements (no LLM - dry mode for testing)
-      // See STYLE.md for playful mode prompts
-      const orangeName = formatFruitName(bestMatch.orange);
-      
-      // Build runners up table (positions 2-5)
-      const runnersUp = rankedCandidates.slice(1);
-      const runnerUpsText = runnersUp.length > 0 
-        ? `\n\n**Runners Up:**\n\n| Rank | Name | Score |\n|------|------|-------|\n${runnersUp.map((c, i) => `| ${i + 2} | ${formatFruitName(c.orange)} | ${(c.score * 100).toFixed(1)}% |`).join("\n")}`
-        : "";
-
-      matchAnnouncement = `**Match Found: ${orangeName}**
-
-Score: ${(bestMatch.score * 100).toFixed(1)}%
-- Preference: ${(bestMatch.breakdown.preference * 100).toFixed(1)}%
-- Embedding: ${(bestMatch.breakdown.embedding * 100).toFixed(1)}%
-
-${prefSummary.appleGets}
-${prefSummary.appleMisses}${runnerUpsText}`;
-
-      orangeAnnouncement = `**New Match: ${apple.name} found you!**
-
-Score: ${(bestMatch.score * 100).toFixed(1)}%
-- Preference: ${(bestMatch.breakdown.preference * 100).toFixed(1)}%
-- Embedding: ${(bestMatch.breakdown.embedding * 100).toFixed(1)}%
-
-${prefSummary.orangeGets}
-${prefSummary.orangeMisses}`;
-
-      // Step 8: Broadcast to connected clients via Supabase Realtime
-      const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://fwqoutllbbwyhrucsvly.supabase.co";
-      const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
-
-      if (SUPABASE_ANON_KEY) {
-        try {
-          await fetch(`${SUPABASE_URL}/realtime/v1/api/broadcast`, {
-            method: "POST",
-            headers: {
-              "apikey": SUPABASE_ANON_KEY,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              messages: [{
-                topic: "matches",
-                event: "new_match",
-                payload: {
-                  appleId: `fruit:${appleId}`,
-                  appleName: apple.name,
-                  orangeId: bestMatch.orange.id,
-                  orangeName: orangeName,
-                  score: bestMatch.score,
-                  announcements: {
-                    forApple: matchAnnouncement,
-                    forOrange: orangeAnnouncement,
-                  },
-                },
-              }],
-            }),
-          });
-          console.log("[Realtime] Broadcast sent for match");
-        } catch (broadcastError) {
-          console.error("[Realtime] Failed to broadcast:", broadcastError);
-        }
-      }
     }
 
     // Build ranked candidates for response
@@ -343,8 +260,13 @@ ${prefSummary.orangeMisses}`;
         preference: c.breakdown.preference,
         embedding: c.breakdown.embedding,
       },
+      preferenceDetails: {
+        appleToOrange: c.breakdown.appleToOrange,
+        orangeToApple: c.breakdown.orangeToApple,
+      },
     }));
 
+    // Return raw match data - API route will handle LLM announcements and Realtime broadcast
     return new Response(
       JSON.stringify({
         message: "Apple received and processed",
@@ -352,14 +274,15 @@ ${prefSummary.orangeMisses}`;
           id: `fruit:${appleId}`,
           name: apple.name,
           description: fullDescription,
+          attributes: apple.attributes,
+          preferences: apple.preferences,
         },
         match: bestMatch
           ? {
               orangeId: bestMatch.orange.id,
               orangeName: formatFruitName(bestMatch.orange),
+              orangeDescription: bestMatch.orange.description,
               score: bestMatch.score,
-              announcement: matchAnnouncement,
-              orangeAnnouncement: orangeAnnouncement,
               breakdown: bestMatch.breakdown,
             }
           : null,
