@@ -1,19 +1,23 @@
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 import { Effect, pipe, Schedule, Duration } from "effect";
+
+// =============================================================================
+// SHADCN UTILITY
+// =============================================================================
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
 
-/**
- * Generates a unique ID
- */
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
-/**
- * Formats a date for display
- */
 export function formatDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleDateString("en-US", {
@@ -25,9 +29,6 @@ export function formatDate(date: Date | string): string {
   });
 }
 
-/**
- * Formats a relative time (e.g., "2 minutes ago")
- */
 export function formatRelativeTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
@@ -44,16 +45,6 @@ export function formatRelativeTime(date: Date | string): string {
   return formatDate(d);
 }
 
-/**
- * Classname utility for conditional classes
- */
-export function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(" ");
-}
-
-/**
- * Delays execution for a given number of milliseconds
- */
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -62,9 +53,6 @@ export function sleep(ms: number): Promise<void> {
 // EFFECT - PRACTICAL UTILITIES
 // =============================================================================
 
-/**
- * Error types for API calls
- */
 export class FetchError {
   readonly _tag = "FetchError";
   constructor(
@@ -81,14 +69,6 @@ export class ApiError {
   ) {}
 }
 
-/**
- * Fetches JSON from a URL with typed error handling.
- *
- * @example
- * ```ts
- * const result = await Effect.runPromise(fetchJson<User>("/api/user"));
- * ```
- */
 export const fetchJson = <T>(
   url: string,
   options?: RequestInit
@@ -113,9 +93,6 @@ export const fetchJson = <T>(
     })
   );
 
-/**
- * Fetches JSON with automatic retry (useful for flaky edge functions).
- */
 export const fetchJsonWithRetry = <T>(
   url: string,
   options?: RequestInit,
@@ -127,9 +104,6 @@ export const fetchJsonWithRetry = <T>(
   return Effect.retry(fetchJson<T>(url, options), schedule);
 };
 
-/**
- * Fetches JSON with a timeout.
- */
 export const fetchJsonWithTimeout = <T>(
   url: string,
   options?: RequestInit,
@@ -143,15 +117,9 @@ export const fetchJsonWithTimeout = <T>(
     })
   );
 
-/**
- * Run an effect and get a Promise back.
- */
 export const runEffect = <T, E>(effect: Effect.Effect<T, E>): Promise<T> =>
   Effect.runPromise(effect);
 
-/**
- * Run an effect with a fallback value on error.
- */
 export const runEffectOr = <T, E>(
   effect: Effect.Effect<T, E>,
   fallback: T

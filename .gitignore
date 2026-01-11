@@ -47,3 +47,9 @@ coverage/
 *.log
 .vercel
 
+.env
+
+
+#Temp Files
+tmp
+history.txt
