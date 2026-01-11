@@ -1,232 +1,320 @@
 @import "tailwindcss";
 
 /* =============================================================================
-   CSS VARIABLES & THEME
+   LINEAR-STYLE MINIMAL DESIGN
+   Clean, functional, monochrome
    ============================================================================= */
 
 :root {
-  /* Colors - Light Mode */
-  --color-background: #fafafa;
-  --color-foreground: #0a0a0a;
-  --color-muted: #71717a;
-  --color-border: #e4e4e7;
-  --color-card: #ffffff;
-  --color-card-hover: #f4f4f5;
+  --color-bg: #ffffff;
+  --color-bg-subtle: #fafafa;
+  --color-bg-muted: #f5f5f5;
+  --color-border: #e5e5e5;
+  --color-border-strong: #d4d4d4;
+  --color-text: #171717;
+  --color-text-secondary: #525252;
+  --color-text-tertiary: #a3a3a3;
+  
+  --color-accent: #171717;
+  --color-accent-subtle: #404040;
+  
+  --color-success: #16a34a;
+  --color-warning: #ca8a04;
+  --color-error: #dc2626;
 
-  /* Accent Colors */
-  --color-apple: #ef4444;
-  --color-apple-light: #fecaca;
-  --color-orange: #f97316;
-  --color-orange-light: #fed7aa;
-  --color-pear: #84cc16;
-  --color-pear-light: #d9f99d;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-mono), "SF Mono", Monaco, monospace;
 
-  /* Primary Action */
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1),
-    0 4px 6px -4px rgb(0 0 0 / 0.1);
-
-  /* Border Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: #09090b;
-    --color-foreground: #fafafa;
-    --color-muted: #a1a1aa;
-    --color-border: #27272a;
-    --color-card: #18181b;
-    --color-card-hover: #27272a;
-
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4),
-      0 4px 6px -4px rgb(0 0 0 / 0.3);
-  }
-}
-
-/* =============================================================================
-   TAILWIND THEME INTEGRATION
-   ============================================================================= */
 
 @theme inline {
-  --color-background: var(--color-background);
-  --color-foreground: var(--color-foreground);
-  --color-muted: var(--color-muted);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --color-muted: var(--color-text-tertiary);
   --color-border: var(--color-border);
-  --color-card: var(--color-card);
-  --color-primary: var(--color-primary);
-  --color-apple: var(--color-apple);
-  --color-orange: var(--color-orange);
-  --color-pear: var(--color-pear);
-
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
 }
 
-/* =============================================================================
-   BASE STYLES
-   ============================================================================= */
+* {
+  box-sizing: border-box;
+}
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* =============================================================================
-   COMPONENT STYLES
-   ============================================================================= */
-
-/* Cards */
-.card {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+::selection {
+  background: var(--color-text);
+  color: var(--color-bg);
 }
 
-.card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-/* Metric Cards */
-.metric-card {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
-}
-
-.metric-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-/* Buttons */
-.btn-primary {
-  background: var(--color-primary);
-  color: white;
-  padding: 0.625rem 1.25rem;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-  font-size: 0.875rem;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-primary:hover {
-  background: var(--color-primary-hover);
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-.btn-secondary {
-  background: transparent;
-  color: var(--color-foreground);
-  padding: 0.625rem 1.25rem;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-  font-size: 0.875rem;
-  border: 1px solid var(--color-border);
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  cursor: pointer;
-}
-
-.btn-secondary:hover {
-  background: var(--color-card-hover);
-  border-color: var(--color-muted);
-}
-
-/* Text Colors */
-.text-muted {
-  color: var(--color-muted);
-}
-
-.text-apple {
-  color: var(--color-apple);
-}
-
-.text-orange {
-  color: var(--color-orange);
-}
-
-.text-pear {
-  color: var(--color-pear);
-}
-
-/* =============================================================================
-   UTILITY ANIMATIONS
-   ============================================================================= */
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out forwards;
-}
-
-@keyframes pulse-subtle {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 2s ease-in-out infinite;
-}
-
-/* =============================================================================
-   SCROLLBAR STYLING
-   ============================================================================= */
-
+/* Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-muted);
+/* =============================================================================
+   TYPOGRAPHY
+   ============================================================================= */
+
+.text-primary { color: var(--color-text); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+
+.font-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* =============================================================================
+   COMPONENTS
+   ============================================================================= */
+
+.card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.card-muted {
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 120ms ease;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+.btn-primary:hover {
+  background: var(--color-accent-subtle);
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover {
+  background: var(--color-bg-subtle);
+  border-color: var(--color-border-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+.btn-ghost:hover {
+  background: var(--color-bg-muted);
+  color: var(--color-text);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 100px;
+  background: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+}
+
+.badge-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-warning {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.badge-error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-live {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Progress */
+.progress-track {
+  height: 6px;
+  background: var(--color-bg-muted);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-text);
+  transition: width 300ms ease;
+}
+
+.progress-fill-success { background: var(--color-success); }
+.progress-fill-warning { background: var(--color-warning); }
+.progress-fill-error { background: var(--color-error); }
+
+/* =============================================================================
+   MESSAGE BUBBLES
+   ============================================================================= */
+
+.message {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.message-system {
+  background: var(--color-bg-subtle);
+  border-color: var(--color-border);
+}
+
+.message-apple {
+  background: var(--color-bg);
+  border-left: 3px solid var(--color-text);
+}
+
+.message-orange {
+  background: var(--color-bg);
+  border-left: 3px solid var(--color-text-tertiary);
+}
+
+.message-match {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+/* =============================================================================
+   ANIMATIONS
+   ============================================================================= */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 200ms ease forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 300ms ease forwards;
+}
+
+/* Loading dots */
+.loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.loading-dots span {
+  width: 4px;
+  height: 4px;
+  background: var(--color-text-tertiary);
+  border-radius: 50%;
+  animation: loadingDot 1.4s infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes loadingDot {
+  0%, 80%, 100% { transform: scale(1); opacity: 0.5; }
+  40% { transform: scale(1.2); opacity: 1; }
+}
+
+/* Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-bg-muted) 0%, var(--color-bg-subtle) 50%, var(--color-bg-muted) 100%);
+  background-size: 200% 100%;
+  animation: skeleton 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* =============================================================================
+   UTILITIES
+   ============================================================================= */
+
+.border-b { border-bottom: 1px solid var(--color-border); }
+.border-t { border-top: 1px solid var(--color-border); }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

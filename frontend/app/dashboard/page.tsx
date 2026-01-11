@@ -2,282 +2,154 @@ import { Suspense } from "react";
 import { getDashboardData } from "./loader";
 import { ConversationPanel } from "./components/ConversationPanel";
 
-// =============================================================================
-// TYPES
-// =============================================================================
-
-export interface MatchMetrics {
-  totalApples: number;
-  totalOranges: number;
-  totalMatches: number;
-  successRate: number;
-  avgScore?: number;
-}
-
-// =============================================================================
-// SERVER DATA LOADING
-// =============================================================================
-
-async function DashboardContent() {
+async function Sidebar() {
   const data = await getDashboardData();
 
   return (
-    <>
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
-        <MetricCard
-          title="Apples"
-          value={data.metrics.totalApples}
-          icon="🍎"
-          description="In pool"
-          color="red"
-        />
-        <MetricCard
-          title="Oranges"
-          value={data.metrics.totalOranges}
-          icon="🍊"
-          description="In pool"
-          color="orange"
-        />
-        <MetricCard
-          title="Matches"
-          value={data.metrics.totalMatches}
-          icon="🍐"
-          description="Perfect pears"
-          color="green"
-        />
-        <MetricCard
-          title="Success Rate"
-          value={`${data.metrics.successRate}%`}
-          icon="📊"
-          description="High quality"
-          color="blue"
-        />
-        <MetricCard
-          title="Avg Score"
-          value={`${(data.metrics.avgScore * 100).toFixed(1)}%`}
-          icon="⭐"
-          description="Compatibility"
-          color="yellow"
-        />
-      </div>
-
-      {/* Score Distribution */}
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="card">
-          <h3 className="mb-4 font-semibold">Match Quality Distribution</h3>
-          <div className="space-y-3">
-            <ScoreBar
-              label="Excellent (90-100%)"
-              count={data.scoreDistribution.excellent}
-              total={data.metrics.totalMatches}
-              color="bg-green-500"
-            />
-            <ScoreBar
-              label="Good (80-90%)"
-              count={data.scoreDistribution.good}
-              total={data.metrics.totalMatches}
-              color="bg-blue-500"
-            />
-            <ScoreBar
-              label="Fair (70-80%)"
-              count={data.scoreDistribution.fair}
-              total={data.metrics.totalMatches}
-              color="bg-yellow-500"
-            />
-            <ScoreBar
-              label="Low (<70%)"
-              count={data.scoreDistribution.low}
-              total={data.metrics.totalMatches}
-              color="bg-red-500"
-            />
-          </div>
-        </div>
-
-        <div className="card">
-          <h3 className="mb-4 font-semibold">Recent Matches</h3>
-          <div className="space-y-2 max-h-[250px] overflow-y-auto">
-            {data.recentMatches.length > 0 ? (
-              data.recentMatches.map((match) => (
-                <div
-                  key={match.id}
-                  className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-800"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🍎</span>
-                    <span className="text-xs text-muted truncate max-w-[80px]">
-                      {match.appleId.split(":")[1]}
-                    </span>
-                    <span className="text-xs">↔</span>
-                    <span className="text-sm">🍊</span>
-                    <span className="text-xs text-muted truncate max-w-[80px]">
-                      {match.orangeId.split(":")[1]}
-                    </span>
-                  </div>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      match.score >= 0.9
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400"
-                        : match.score >= 0.8
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
-                        : match.score >= 0.7
-                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400"
-                        : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400"
-                    }`}
-                  >
-                    {(match.score * 100).toFixed(0)}%
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-sm text-muted py-8">
-                No matches yet. Start a conversation!
-              </p>
-            )}
-          </div>
+    <div className="space-y-6">
+      {/* How it works */}
+      <div>
+        <h3 className="text-xs font-medium text-tertiary uppercase tracking-wide mb-3">How it works</h3>
+        <div className="space-y-2 text-sm text-secondary">
+          <p>1. Add a fruit (apple or orange)</p>
+          <p>2. System generates attributes & preferences</p>
+          <p>3. Text → 1536-dim embedding (OpenAI)</p>
+          <p>4. Cosine similarity match (SurrealDB)</p>
+          <p>5. Match announcement (Claude)</p>
         </div>
       </div>
-    </>
+
+      <div className="h-px bg-[var(--color-border)]" />
+
+      {/* Stats */}
+      <div>
+        <h3 className="text-xs font-medium text-tertiary uppercase tracking-wide mb-3">Stats</h3>
+        <div className="space-y-2">
+          <StatRow label="Apples" value={data.metrics.totalApples} />
+          <StatRow label="Oranges" value={data.metrics.totalOranges} />
+          <StatRow label="Matches" value={data.metrics.totalMatches} />
+          <StatRow label="Avg score" value={`${(data.metrics.avgScore * 100).toFixed(0)}%`} />
+        </div>
+      </div>
+
+      <div className="h-px bg-[var(--color-border)]" />
+
+      {/* Quality */}
+      <div>
+        <h3 className="text-xs font-medium text-tertiary uppercase tracking-wide mb-3">Match quality</h3>
+        <div className="space-y-2">
+          <QualityRow label="Excellent" count={data.scoreDistribution.excellent} total={data.metrics.totalMatches} />
+          <QualityRow label="Good" count={data.scoreDistribution.good} total={data.metrics.totalMatches} />
+          <QualityRow label="Fair" count={data.scoreDistribution.fair} total={data.metrics.totalMatches} />
+          <QualityRow label="Low" count={data.scoreDistribution.low} total={data.metrics.totalMatches} />
+        </div>
+      </div>
+
+      <div className="h-px bg-[var(--color-border)]" />
+
+      {/* Recent */}
+      <div>
+        <h3 className="text-xs font-medium text-tertiary uppercase tracking-wide mb-3">Recent matches</h3>
+        <div className="space-y-1.5">
+          {data.recentMatches.length > 0 ? (
+            data.recentMatches.slice(0, 5).map((match) => (
+              <RecentMatch key={match.id} match={match} />
+            ))
+          ) : (
+            <p className="text-sm text-tertiary">No matches yet</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
-// =============================================================================
-// COMPONENTS
-// =============================================================================
-
-interface MetricCardProps {
-  title: string;
-  value: string | number;
-  icon: string;
-  description: string;
-  color?: "red" | "orange" | "green" | "blue" | "yellow";
+function StatRow({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-secondary">{label}</span>
+      <span className="font-mono">{value}</span>
+    </div>
+  );
 }
 
-function MetricCard({ title, value, icon, description, color = "blue" }: MetricCardProps) {
-  const colorClasses = {
-    red: "border-l-red-500",
-    orange: "border-l-orange-500",
-    green: "border-l-green-500",
-    blue: "border-l-blue-500",
-    yellow: "border-l-yellow-500",
+function QualityRow({ label, count, total }: { label: string; count: number; total: number }) {
+  const pct = total > 0 ? (count / total) * 100 : 0;
+  return (
+    <div className="flex items-center gap-3 text-sm">
+      <span className="text-secondary w-16">{label}</span>
+      <div className="flex-1 h-1.5 bg-[var(--color-bg-muted)] rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-[var(--color-text)] rounded-full transition-all" 
+          style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%` }} 
+        />
+      </div>
+      <span className="font-mono text-tertiary w-4 text-right">{count}</span>
+    </div>
+  );
+}
+
+function RecentMatch({ match }: { match: { id: string; appleId: string; orangeId: string; score: number } }) {
+  const formatId = (id: string) => {
+    const name = id.split(":")[1] || id;
+    return name.slice(0, 8);
   };
-
   return (
-    <div className={`metric-card border-l-4 ${colorClasses[color]}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-xl">{icon}</span>
-        <span className="text-xs uppercase tracking-wide text-muted">{title}</span>
-      </div>
-      <div className="mt-3">
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="mt-1 text-xs text-muted">{description}</p>
-      </div>
+    <div className="flex items-center justify-between text-xs">
+      <span className="font-mono text-tertiary">
+        {formatId(match.appleId)} → {formatId(match.orangeId)}
+      </span>
+      <span className="font-mono">{(match.score * 100).toFixed(0)}%</span>
     </div>
   );
 }
 
-function ScoreBar({
-  label,
-  count,
-  total,
-  color,
-}: {
-  label: string;
-  count: number;
-  total: number;
-  color: string;
-}) {
-  const percentage = total > 0 ? (count / total) * 100 : 0;
-
+function SidebarSkeleton() {
   return (
-    <div>
-      <div className="mb-1 flex justify-between text-sm">
-        <span>{label}</span>
-        <span className="text-muted">{count}</span>
-      </div>
-      <div className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-700">
-        <div
-          className={`h-2 rounded-full ${color} transition-all`}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function MetricCardSkeleton() {
-  return (
-    <div className="metric-card animate-pulse border-l-4 border-l-zinc-300">
-      <div className="flex items-center justify-between">
-        <div className="h-6 w-6 rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="h-3 w-16 rounded bg-zinc-200 dark:bg-zinc-700" />
-      </div>
-      <div className="mt-3">
-        <div className="h-7 w-20 rounded bg-zinc-200 dark:bg-zinc-700" />
-        <div className="mt-2 h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />
-      </div>
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <MetricCardSkeleton key={i} />
-        ))}
-      </div>
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="card h-[300px] animate-pulse">
-          <div className="h-5 w-48 rounded bg-zinc-200 dark:bg-zinc-700" />
-        </div>
-        <div className="card h-[300px] animate-pulse">
-          <div className="h-5 w-32 rounded bg-zinc-200 dark:bg-zinc-700" />
+    <div className="space-y-6">
+      <div>
+        <div className="skeleton h-3 w-20 mb-3" />
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-4 w-full" />)}
         </div>
       </div>
-    </>
+      <div className="h-px bg-[var(--color-border)]" />
+      <div>
+        <div className="skeleton h-3 w-12 mb-3" />
+        <div className="space-y-2">
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-4 w-full" />)}
+        </div>
+      </div>
+    </div>
   );
 }
-
-// =============================================================================
-// PAGE
-// =============================================================================
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/80">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-                🍎 Fruit Matchmaking 🍊
-              </h1>
-              <p className="mt-0.5 text-xs sm:text-sm text-muted">
-                Creating perfect pears, one match at a time
-              </p>
-            </div>
-          </div>
+      <header className="border-b sticky top-0 bg-[var(--color-bg)] z-50">
+        <div className="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
+          <h1 className="text-sm font-medium">Fruit Matchmaking</h1>
+          <span className="badge badge-live">Live</span>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {/* Conversation Section */}
-        <section className="mb-8">
-          <h2 className="mb-4 text-lg font-semibold">Start Matching</h2>
-          <ConversationPanel />
-        </section>
+      {/* Main - two column layout */}
+      <main className="max-w-7xl mx-auto px-6 py-6">
+        <div className="flex gap-8">
+          {/* Left: Conversation (2/3) */}
+          <div className="flex-1 min-w-0">
+            <ConversationPanel />
+          </div>
 
-        {/* Metrics Section */}
-        <section>
-          <h2 className="mb-4 text-lg font-semibold">System Metrics</h2>
-          <Suspense fallback={<DashboardSkeleton />}>
-            <DashboardContent />
-          </Suspense>
-        </section>
+          {/* Right: Sidebar (1/3) */}
+          <div className="w-72 flex-shrink-0">
+            <Suspense fallback={<SidebarSkeleton />}>
+              <Sidebar />
+            </Suspense>
+          </div>
+        </div>
       </main>
     </div>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { callIncomingApple, callIncomingOrange } from "@/lib/api";
 
 interface Message {
@@ -18,7 +17,7 @@ export function ConversationPanel() {
     {
       id: "welcome",
       type: "system",
-      content: "Welcome to the Fruit Matchmaking System! Click a button below to start a new matching conversation.",
+      content: "Ready. Add a fruit to start matching.",
       timestamp: new Date(),
     },
   ]);
@@ -39,65 +38,40 @@ export function ConversationPanel() {
     setIsLoading(true);
     setLoadingType("apple");
 
-    // Add "searching" message
-    const searchingId = `searching-${Date.now()}`;
     setMessages((prev) => [
       ...prev,
-      {
-        id: searchingId,
-        type: "system",
-        content: "A new apple has arrived! Generating profile and searching for a match...",
-        timestamp: new Date(),
-      },
+      { id: `s-${Date.now()}`, type: "system", content: "Generating apple...", timestamp: new Date() },
     ]);
 
     try {
       const response = await callIncomingApple();
-      
-      // Add the apple's introduction
       setMessages((prev) => [
         ...prev,
         {
-          id: response.apple?.id || `apple-${Date.now()}`,
+          id: response.apple?.id || `a-${Date.now()}`,
           type: "apple",
-          content: response.apple?.description || "An apple has joined the matchmaking pool.",
+          content: response.apple?.description || "Apple added.",
           timestamp: new Date(),
           fruitId: response.apple?.id,
         },
       ]);
 
-      // Add match result
       if (response.match) {
         setMessages((prev) => [
           ...prev,
           {
-            id: `match-${Date.now()}`,
+            id: `m-${Date.now()}`,
             type: "match",
             content: response.match!.announcement,
             timestamp: new Date(),
             matchScore: response.match!.score,
           },
         ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `no-match-${Date.now()}`,
-            type: "system",
-            content: "No matching oranges found yet. Try adding some oranges to the pool!",
-            timestamp: new Date(),
-          },
-        ]);
       }
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        {
-          id: `error-${Date.now()}`,
-          type: "system",
-          content: `Error: ${error instanceof Error ? error.message : "Failed to process apple"}`,
-          timestamp: new Date(),
-        },
+        { id: `e-${Date.now()}`, type: "system", content: `Error: ${error instanceof Error ? error.message : "Failed"}`, timestamp: new Date() },
       ]);
     } finally {
       setIsLoading(false);
@@ -110,26 +84,19 @@ export function ConversationPanel() {
     setIsLoading(true);
     setLoadingType("orange");
 
-    const searchingId = `searching-${Date.now()}`;
     setMessages((prev) => [
       ...prev,
-      {
-        id: searchingId,
-        type: "system",
-        content: "A new orange has arrived! Generating profile and searching for a match...",
-        timestamp: new Date(),
-      },
+      { id: `s-${Date.now()}`, type: "system", content: "Generating orange...", timestamp: new Date() },
     ]);
 
     try {
       const response = await callIncomingOrange();
-      
       setMessages((prev) => [
         ...prev,
         {
-          id: response.orange?.id || `orange-${Date.now()}`,
+          id: response.orange?.id || `o-${Date.now()}`,
           type: "orange",
-          content: response.orange?.description || "An orange has joined the matchmaking pool.",
+          content: response.orange?.description || "Orange added.",
           timestamp: new Date(),
           fruitId: response.orange?.id,
         },
@@ -139,33 +106,18 @@ export function ConversationPanel() {
         setMessages((prev) => [
           ...prev,
           {
-            id: `match-${Date.now()}`,
+            id: `m-${Date.now()}`,
             type: "match",
             content: response.match!.announcement,
             timestamp: new Date(),
             matchScore: response.match!.score,
           },
         ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `no-match-${Date.now()}`,
-            type: "system",
-            content: "No matching apples found yet. Try adding some apples to the pool!",
-            timestamp: new Date(),
-          },
-        ]);
       }
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        {
-          id: `error-${Date.now()}`,
-          type: "system",
-          content: `Error: ${error instanceof Error ? error.message : "Failed to process orange"}`,
-          timestamp: new Date(),
-        },
+        { id: `e-${Date.now()}`, type: "system", content: `Error: ${error instanceof Error ? error.message : "Failed"}`, timestamp: new Date() },
       ]);
     } finally {
       setIsLoading(false);
@@ -173,147 +125,74 @@ export function ConversationPanel() {
     }
   };
 
-  const clearConversation = () => {
-    setMessages([
-      {
-        id: "welcome",
-        type: "system",
-        content: "Conversation cleared. Ready for new matches!",
-        timestamp: new Date(),
-      },
-    ]);
-  };
-
   return (
-    <div className="flex h-[600px] flex-col rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="card flex flex-col h-[calc(100vh-7rem)]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold">Matchmaking Conversation</span>
-          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            Live
-          </span>
+          <span className="text-sm font-medium">Feed</span>
         </div>
-        <button
-          onClick={clearConversation}
-          className="rounded px-2 py-1 text-sm text-muted hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        <button 
+          onClick={() => setMessages([{ id: "c", type: "system", content: "Cleared.", timestamp: new Date() }])} 
+          className="text-xs text-tertiary hover:text-secondary"
         >
           Clear
         </button>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} message={msg} />
         ))}
         {isLoading && (
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <div className="flex gap-1">
-              <span className="animate-bounce">.</span>
-              <span className="animate-bounce" style={{ animationDelay: "0.1s" }}>.</span>
-              <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>.</span>
-            </div>
-            <span>
-              {loadingType === "apple" ? "Processing apple" : "Processing orange"}...
-            </span>
+          <div className="flex items-center gap-2 text-sm text-tertiary">
+            <div className="loading-dots"><span></span><span></span><span></span></div>
+            <span>{loadingType === "apple" ? "Processing apple" : "Processing orange"}...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Action Buttons */}
-      <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-        <div className="flex gap-3">
-          <button
-            onClick={handleNewApple}
-            disabled={isLoading}
-            className={cn(
-              "flex-1 rounded-lg px-4 py-3 font-medium transition-all",
-              "bg-red-500 text-white hover:bg-red-600",
-              "disabled:cursor-not-allowed disabled:opacity-50"
-            )}
-          >
-            <span className="mr-2">🍎</span>
-            New Apple
-          </button>
-          <button
-            onClick={handleNewOrange}
-            disabled={isLoading}
-            className={cn(
-              "flex-1 rounded-lg px-4 py-3 font-medium transition-all",
-              "bg-orange-500 text-white hover:bg-orange-600",
-              "disabled:cursor-not-allowed disabled:opacity-50"
-            )}
-          >
-            <span className="mr-2">🍊</span>
-            New Orange
-          </button>
-        </div>
+      {/* Actions */}
+      <div className="px-4 py-3 border-t flex gap-2">
+        <button onClick={handleNewApple} disabled={isLoading} className="btn btn-primary flex-1">
+          Add Apple
+        </button>
+        <button onClick={handleNewOrange} disabled={isLoading} className="btn btn-secondary flex-1">
+          Add Orange
+        </button>
       </div>
     </div>
   );
 }
 
 function MessageBubble({ message }: { message: Message }) {
-  const getMessageStyles = () => {
-    switch (message.type) {
-      case "apple":
-        return "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-900/50";
-      case "orange":
-        return "bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-900/50";
-      case "match":
-        return "bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-900/50";
-      default:
-        return "bg-zinc-50 border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700";
-    }
-  };
+  const cls = {
+    system: "message-system",
+    apple: "message-apple",
+    orange: "message-orange",
+    match: "message-match",
+  }[message.type];
 
-  const getIcon = () => {
-    switch (message.type) {
-      case "apple":
-        return "🍎";
-      case "orange":
-        return "🍊";
-      case "match":
-        return "🍐";
-      default:
-        return "💬";
-    }
-  };
-
-  const getLabel = () => {
-    switch (message.type) {
-      case "apple":
-        return "Apple";
-      case "orange":
-        return "Orange";
-      case "match":
-        return "Match Found!";
-      default:
-        return "System";
-    }
-  };
+  const label = { system: "System", apple: "Apple", orange: "Orange", match: "Match" }[message.type];
 
   return (
-    <div className={cn("rounded-lg border p-4", getMessageStyles())}>
-      <div className="mb-2 flex items-center justify-between">
+    <div className={`message ${cls}`}>
+      <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-2">
-          <span>{getIcon()}</span>
-          <span className="text-sm font-medium">{getLabel()}</span>
+          <span className="text-xs font-medium">{label}</span>
           {message.matchScore !== undefined && (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/50 dark:text-green-400">
-              {(message.matchScore * 100).toFixed(1)}% match
-            </span>
+            <span className="badge badge-success text-xs">{(message.matchScore * 100).toFixed(0)}%</span>
           )}
         </div>
-        <span className="text-xs text-muted">
-          {message.timestamp.toLocaleTimeString()}
+        <span className="text-xs text-tertiary font-mono">
+          {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </span>
       </div>
-      <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+      <p className="text-sm leading-relaxed">{message.content}</p>
       {message.fruitId && (
-        <p className="mt-2 text-xs text-muted">ID: {message.fruitId}</p>
+        <p className="text-xs text-tertiary font-mono mt-2">{message.fruitId}</p>
       )}
     </div>
   );
