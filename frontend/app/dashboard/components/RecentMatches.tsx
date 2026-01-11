@@ -39,7 +39,7 @@ function getScoreColor(score: number): string {
 
 export function RecentMatches({ matches }: RecentMatchesProps) {
   return (
-    <div className="card p-5 h-full">
+    <div className="card p-5 h-full bg-white">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[11px] font-medium text-[var(--color-text-tertiary)] uppercase tracking-wide">
           Recent Matches
