@@ -293,6 +293,7 @@ export function MatchGraph() {
     return `
       <div style="
         background: white;
+        border: none;
         border-radius: 10px;
         min-width: 200px;
         max-width: 320px;
