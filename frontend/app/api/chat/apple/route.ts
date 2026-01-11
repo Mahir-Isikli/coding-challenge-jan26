@@ -50,7 +50,8 @@ Keep it under 100 words total.
 No match found yet. Acknowledge the apple joined and is waiting for their perfect orange match. Keep it brief and encouraging.
 `}`;
 
-    // 3. Broadcast match to both panels via Realtime (server-side)
+    // 3. Broadcast match to both panels via Realtime
+    // Edge function returns both announcements, we broadcast them here
     if (data.match && SUPABASE_ANON_KEY) {
       try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -58,16 +59,20 @@ No match found yet. Acknowledge the apple joined and is waiting for their perfec
           config: { broadcast: { self: true } },
         });
         
-        // Subscribe first, then send
         await new Promise<void>((resolve, reject) => {
           channel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              resolve();
-            } else if (status === 'CHANNEL_ERROR') {
-              reject(new Error('Channel subscription failed'));
-            }
+            if (status === 'SUBSCRIBED') resolve();
+            else if (status === 'CHANNEL_ERROR') reject(new Error('Channel subscription failed'));
           });
         });
+
+        // Generate a rich message for the orange if not provided by edge function
+        const orangeMessage = data.match.orangeAnnouncement || 
+          `🍊✨ **Great news!** A new apple just found YOU as their perfect match!\n\n` +
+          `**Compatibility: ${(data.match.score * 100).toFixed(0)}%**\n\n` +
+          `This apple was searching for exactly what you offer - and you stood out from all the other oranges! ` +
+          `The matchmaking algorithm found strong compatibility between your profiles. ` +
+          `Looks like your citrus charm has caught someone's eye! 🍎💕`;
 
         await channel.send({
           type: 'broadcast',
@@ -78,7 +83,7 @@ No match found yet. Acknowledge the apple joined and is waiting for their perfec
             score: data.match.score,
             announcements: {
               forApple: data.match.announcement,
-              forOrange: `🍊 Someone found you! A new apple matched with you at ${(data.match.score * 100).toFixed(0)}% compatibility!`,
+              forOrange: orangeMessage,
             },
           },
         });
