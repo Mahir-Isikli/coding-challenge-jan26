@@ -117,8 +117,8 @@ Announce that ${apple.name} has joined and is waiting for their perfect orange m
       const emoji = preferenceEmojis[p] || '✓';
       // Convert camelCase to readable format
       const readable = p.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-      return `${readable} ${emoji}`;
-    }).join(' • ');
+      return `• ${readable} ${emoji}`;
+    }).join('\n\n');
   };
 
   const applePrefsMatched = formatPreferences(breakdown.appleToOrange.satisfied);
@@ -132,11 +132,17 @@ A new orange named **${match.orangeName}** just found YOU as their perfect match
 
 **Compatibility: ${(match.score * 100).toFixed(1)}%**
 
-• Preference match: ${(breakdown.preference * 100).toFixed(1)}% • Vibe match: ${(breakdown.embedding * 100).toFixed(1)}%
+• Preference match: ${(breakdown.preference * 100).toFixed(1)}%
 
-${applePrefsMatched ? `**Your preferences met:** • ${applePrefsMatched}` : '**This orange checks all your boxes!** ✨'}
+• Vibe match: ${(breakdown.embedding * 100).toFixed(1)}%
 
-${orangePrefsMatched ? `**${match.orangeName}'s preferences you satisfy:** • ${orangePrefsMatched}` : ''}
+${applePrefsMatched ? `**Your preferences met:**
+
+${applePrefsMatched}` : '**This orange checks all your boxes!** ✨'}
+
+${orangePrefsMatched ? `**${match.orangeName}'s preferences you satisfy:**
+
+${orangePrefsMatched}` : ''}
 
 Add one short playful closing line with fruit puns/emojis.`;
 }
@@ -166,8 +172,8 @@ async function broadcastMatch(data: EdgeFunctionResponse, appleAnnouncement: str
     return prefs.map(p => {
       const emoji = preferenceEmojis[p] || '✓';
       const readable = p.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-      return `${readable} ${emoji}`;
-    }).join(' • ');
+      return `• ${readable} ${emoji}`;
+    }).join('\n\n');
   };
 
   const orangePrefsMatched = formatPreferences(breakdown.orangeToApple.satisfied);
@@ -180,11 +186,18 @@ A new apple named **${apple.name}** just found YOU as their perfect match!
 
 **Compatibility: ${(match.score * 100).toFixed(1)}%**
 
-• Preference match: ${(breakdown.preference * 100).toFixed(1)}% • Vibe match: ${(breakdown.embedding * 100).toFixed(1)}%
+• Preference match: ${(breakdown.preference * 100).toFixed(1)}%
 
-${orangePrefsMatched ? `**Your preferences met:** • ${orangePrefsMatched}` : '**This apple checks all your boxes!** ✨'}
+• Vibe match: ${(breakdown.embedding * 100).toFixed(1)}%
 
-${applePrefsMatched ? `**${apple.name}'s preferences you satisfy:** • ${applePrefsMatched}\n` : ''}
+${orangePrefsMatched ? `**Your preferences met:**
+
+${orangePrefsMatched}` : '**This apple checks all your boxes!** ✨'}
+
+${applePrefsMatched ? `**${apple.name}'s preferences you satisfy:**
+
+${applePrefsMatched}` : ''}
+
 Looks like your citrus charm caught someone's eye! 🍊💕`;
 
   try {
