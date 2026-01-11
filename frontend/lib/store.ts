@@ -102,6 +102,8 @@ interface MatchmakingState {
   // Panel-specific feed actions
   addAppleFeedMessage: (message: FeedMessage) => void;
   addOrangeFeedMessage: (message: FeedMessage) => void;
+  updateAppleFeedMessage: (id: string, content: string) => void;
+  updateOrangeFeedMessage: (id: string, content: string) => void;
   clearAppleFeed: () => void;
   clearOrangeFeed: () => void;
   
@@ -173,6 +175,20 @@ export const useMatchmakingStore = create<MatchmakingState>()(
         addOrangeFeedMessage: (message) =>
           set((state) => ({
             orangeFeedMessages: [...state.orangeFeedMessages, message],
+          })),
+
+        updateAppleFeedMessage: (id, content) =>
+          set((state) => ({
+            appleFeedMessages: state.appleFeedMessages.map((msg) =>
+              msg.id === id ? { ...msg, content } : msg
+            ),
+          })),
+
+        updateOrangeFeedMessage: (id, content) =>
+          set((state) => ({
+            orangeFeedMessages: state.orangeFeedMessages.map((msg) =>
+              msg.id === id ? { ...msg, content } : msg
+            ),
           })),
 
         clearAppleFeed: () =>

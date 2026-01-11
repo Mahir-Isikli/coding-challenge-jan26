@@ -10,11 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fwqoutllbbwyhrucsvly.supabase.co";
-
 export function OrangeChat() {
-  const { orangeFeedMessages, addOrangeFeedMessage } = useMatchmakingStore();
+  const { orangeFeedMessages, addOrangeFeedMessage, updateOrangeFeedMessage } = useMatchmakingStore();
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -30,26 +27,49 @@ export function OrangeChat() {
     if (isLoading) return;
     setIsLoading(true);
 
+    const joiningMsgId = `orange-${Date.now()}`;
     addOrangeFeedMessage({
-      id: `orange-${Date.now()}`,
+      id: joiningMsgId,
       type: "orange",
       content: "Joining the pool...",
       timestamp: new Date(),
     });
 
     try {
-      // Call edge function directly - it handles everything including Realtime broadcast
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/get-incoming-orange`, {
+      // Call API route which handles edge function + LLM streaming + Realtime broadcast
+      const response = await fetch('/api/chat/orange', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
         throw new Error(`Failed: ${response.statusText}`);
       }
 
-      // Realtime will deliver the match announcement to the feed
+      // Create a new message for streaming content
+      const streamMsgId = `stream-orange-${Date.now()}`;
+      addOrangeFeedMessage({
+        id: streamMsgId,
+        type: "match",
+        content: "",
+        timestamp: new Date(),
+      });
+
+      // Read the stream (plain text from toTextStreamResponse)
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          fullContent += chunk;
+          updateOrangeFeedMessage(streamMsgId, fullContent);
+        }
+      }
     } catch (error) {
       console.error('Error adding orange:', error);
       addOrangeFeedMessage({

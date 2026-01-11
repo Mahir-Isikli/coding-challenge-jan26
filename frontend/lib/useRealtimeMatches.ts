@@ -10,6 +10,7 @@ interface BroadcastPayload {
   orangeId: string;
   orangeName?: string;
   score: number;
+  triggeredBy: "apple" | "orange";
   announcements: {
     forApple: string;
     forOrange: string;
@@ -81,35 +82,39 @@ export function useRealtimeMatches() {
           createdAt: new Date(),
         });
 
-        // Route to Apple panel
-        const appleMessage: FeedMessage = {
-          id: `feed-apple-${Date.now()}`,
-          type: "match",
-          content: payload.announcements.forApple,
-          fruitId: payload.appleId,
-          matchData: {
-            appleId: payload.appleId,
-            orangeId: payload.orangeId,
-            score: payload.score,
-          },
-          timestamp: new Date(),
-        };
-        addAppleFeedMessage(appleMessage);
-
-        // Route to Orange panel
-        const orangeMessage: FeedMessage = {
-          id: `feed-orange-${Date.now()}`,
-          type: "match",
-          content: payload.announcements.forOrange,
-          fruitId: payload.orangeId,
-          matchData: {
-            appleId: payload.appleId,
-            orangeId: payload.orangeId,
-            score: payload.score,
-          },
-          timestamp: new Date(),
-        };
-        addOrangeFeedMessage(orangeMessage);
+        // Only route to the panel that DIDN'T trigger the action
+        // The triggering panel gets the message via direct streaming
+        if (payload.triggeredBy === "apple") {
+          // Apple triggered, so only send to Orange panel via Realtime
+          const orangeMessage: FeedMessage = {
+            id: `feed-orange-${Date.now()}`,
+            type: "match",
+            content: payload.announcements.forOrange,
+            fruitId: payload.orangeId,
+            matchData: {
+              appleId: payload.appleId,
+              orangeId: payload.orangeId,
+              score: payload.score,
+            },
+            timestamp: new Date(),
+          };
+          addOrangeFeedMessage(orangeMessage);
+        } else {
+          // Orange triggered, so only send to Apple panel via Realtime
+          const appleMessage: FeedMessage = {
+            id: `feed-apple-${Date.now()}`,
+            type: "match",
+            content: payload.announcements.forApple,
+            fruitId: payload.appleId,
+            matchData: {
+              appleId: payload.appleId,
+              orangeId: payload.orangeId,
+              score: payload.score,
+            },
+            timestamp: new Date(),
+          };
+          addAppleFeedMessage(appleMessage);
+        }
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {

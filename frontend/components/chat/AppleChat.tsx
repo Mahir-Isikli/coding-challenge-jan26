@@ -10,11 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fwqoutllbbwyhrucsvly.supabase.co";
-
 export function AppleChat() {
-  const { appleFeedMessages, addAppleFeedMessage } = useMatchmakingStore();
+  const { appleFeedMessages, addAppleFeedMessage, updateAppleFeedMessage } = useMatchmakingStore();
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -30,26 +27,49 @@ export function AppleChat() {
     if (isLoading) return;
     setIsLoading(true);
 
+    const joiningMsgId = `apple-${Date.now()}`;
     addAppleFeedMessage({
-      id: `apple-${Date.now()}`,
+      id: joiningMsgId,
       type: "apple",
       content: "Joining the pool...",
       timestamp: new Date(),
     });
 
     try {
-      // Call edge function directly - it handles everything including Realtime broadcast
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/get-incoming-apple`, {
+      // Call API route which handles edge function + LLM streaming + Realtime broadcast
+      const response = await fetch('/api/chat/apple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
         throw new Error(`Failed: ${response.statusText}`);
       }
 
-      // Realtime will deliver the match announcement to the feed
+      // Create a new message for streaming content
+      const streamMsgId = `stream-apple-${Date.now()}`;
+      addAppleFeedMessage({
+        id: streamMsgId,
+        type: "match",
+        content: "",
+        timestamp: new Date(),
+      });
+
+      // Read the stream (plain text from toTextStreamResponse)
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          fullContent += chunk;
+          updateAppleFeedMessage(streamMsgId, fullContent);
+        }
+      }
     } catch (error) {
       console.error('Error adding apple:', error);
       addAppleFeedMessage({
