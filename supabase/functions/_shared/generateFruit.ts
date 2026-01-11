@@ -66,13 +66,20 @@ const NULL_PROBABILITY = 0.05;
 
 // Name pools for fruits (variety-inspired and fun names)
 const APPLE_NAMES = [
+  // Classic varieties
   "Gala", "Fuji", "Honeycrisp", "Braeburn", "Pippin", "Granny", "Macintosh", "Jonagold",
   "Cortland", "Ambrosia", "Crispin", "Empire", "Jazz", "Envy", "Opal", "Aurora",
   "Pink Lady", "Cosmic", "Snapple", "Liberty", "Fortune", "Autumn", "Sunrise", "Golden",
   "Ruby", "Scarlet", "Rosie", "Blossom", "Orchard", "Newton", "Cider", "Bramley",
   "Spencer", "Baldwin", "Rome", "Winesap", "Cameo", "Kiku", "Smitten", "Rave",
   "Sweetie", "Kanzi", "Rockit", "Pazazz", "Sugar Bee", "Evercrisp", "Juici", "Ludacrisp",
-  "Crimson", "Zestar"
+  "Crimson", "Zestar",
+  // Fun & quirky names
+  "McLovin", "Crunchmaster", "Sir Crispington", "Johnny Appleseed", "Core Values", "Red Delicious Jr",
+  "Appleton", "Captain Crunch", "Snapdragon", "Wozniak", "Stemsworth", "Lady Macintosh",
+  "Gravity", "Big Apple", "Sparky", "Twinkle", "Harvest Moon", "Caramel Dream",
+  "Freckles", "Sunny Side", "Applejack", "Gingersnap", "Butterscotch", "Starlight",
+  "Meadow", "Clover", "Breezy", "Copper", "Maple", "Hazel"
 ];
 
 const ORANGE_NAMES = [

@@ -272,12 +272,10 @@ Deno.serve(async (req) => {
       // See STYLE.md for playful mode prompts
       const orangeName = formatFruitName(bestMatch.orange);
       
-      // Build runner-ups list (positions 2-5)
-      const runnerUps = rankedCandidates.slice(1).map((c, i) => {
-        return `${i + 2}. ${formatFruitName(c.orange)} (${(c.score * 100).toFixed(1)}%)`;
-      });
-      const runnerUpsText = runnerUps.length > 0 
-        ? `\n\n**Other Candidates:**\n${runnerUps.join("\n")}`
+      // Build runners up table (positions 2-5)
+      const runnersUp = rankedCandidates.slice(1);
+      const runnerUpsText = runnersUp.length > 0 
+        ? `\n\n**Runners Up:**\n\n| Rank | Name | Score |\n|------|------|-------|\n${runnersUp.map((c, i) => `| ${i + 2} | ${formatFruitName(c.orange)} | ${(c.score * 100).toFixed(1)}% |`).join("\n")}`
         : "";
 
       matchAnnouncement = `**Match Found: ${orangeName}**

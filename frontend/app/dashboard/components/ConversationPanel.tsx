@@ -93,7 +93,7 @@ export function ConversationPanel() {
     addFeedMessage({
       id: `apple-${Date.now()}`,
       type: "apple",
-      content: "New apple joining the matchmaking pool...",
+      content: "Joining the pool...",
       timestamp: new Date(),
     });
 
@@ -110,7 +110,7 @@ export function ConversationPanel() {
     addFeedMessage({
       id: `orange-${Date.now()}`,
       type: "orange",
-      content: "New orange joining the matchmaking pool...",
+      content: "Joining the pool...",
       timestamp: new Date(),
     });
 

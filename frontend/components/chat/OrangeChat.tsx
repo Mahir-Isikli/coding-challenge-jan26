@@ -33,7 +33,7 @@ export function OrangeChat() {
     addOrangeFeedMessage({
       id: `orange-${Date.now()}`,
       type: "orange",
-      content: "New orange joining the matchmaking pool...",
+      content: "Joining the pool...",
       timestamp: new Date(),
     });
 
