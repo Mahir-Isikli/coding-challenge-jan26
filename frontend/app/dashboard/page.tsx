@@ -1,15 +1,16 @@
 import { Suspense } from "react";
 import { getDashboardData } from "./loader";
-import { QualityChart } from "./components/QualityChart";
 import { RecentMatches } from "./components/RecentMatches";
+import { FruitBreakdown } from "./components/FruitBreakdown";
 
 async function StatsContent() {
   const data = await getDashboardData();
+  const { excellent, good } = data.scoreDistribution;
 
   return (
     <div className="space-y-5">
-      {/* Hero stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Hero stats row - all in one row */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <HeroStat 
           label="Apples" 
           value={data.metrics.totalApples} 
@@ -23,23 +24,41 @@ async function StatsContent() {
         <HeroStat 
           label="Matches" 
           value={data.metrics.totalMatches} 
-          icon="💑" 
+          icon="💑"
+          tooltip="Matches are created when you add a new Apple or Orange. Each new fruit is matched with the best compatible partner from the opposite type."
         />
         <HeroStat 
           label="Avg Score" 
           value={`${(data.metrics.avgScore * 100).toFixed(0)}%`} 
           highlight={data.metrics.avgScore >= 0.7}
+          tooltip="Average of all match scores. Each match score = (Apple's preferences met + Orange's preferences met) / 2"
+        />
+        <HeroStat 
+          label="Excellent" 
+          value={excellent}
+          subtitle="90%+"
+          highlight={excellent > 0}
+          color="#16a34a"
+        />
+        <HeroStat 
+          label="Good" 
+          value={good}
+          subtitle="75-89%"
+          color="#3b82f6"
         />
       </div>
 
       {/* Main content */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <div className="lg:col-span-2">
-          <QualityChart distribution={data.scoreDistribution} total={data.metrics.totalMatches} />
-        </div>
-        <div className="lg:col-span-3">
-          <RecentMatches matches={data.recentMatches} />
-        </div>
+      <div className="grid grid-cols-1 gap-5">
+        <RecentMatches matches={data.recentMatches} />
+      </div>
+
+      {/* Per-fruit breakdown */}
+      <div className="mt-5">
+        <FruitBreakdown 
+          apples={data.fruitBreakdown.apples} 
+          oranges={data.fruitBreakdown.oranges} 
+        />
       </div>
     </div>
   );
@@ -49,24 +68,48 @@ function HeroStat({
   label, 
   value, 
   icon,
-  highlight 
+  subtitle,
+  highlight,
+  tooltip,
+  color
 }: { 
   label: string; 
   value: string | number; 
   icon?: string;
+  subtitle?: string;
   highlight?: boolean;
+  tooltip?: string;
+  color?: string;
 }) {
   return (
-    <div className="card p-4 bg-white">
+    <div className="card p-4 bg-white group relative">
       <div className="flex items-center gap-2 mb-1">
         {icon && <span className="text-sm">{icon}</span>}
+        {color && !icon && (
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+        )}
         <span className="text-[11px] font-medium text-[var(--color-text-tertiary)] uppercase tracking-wide">
           {label}
         </span>
+        {subtitle && (
+          <span className="text-[10px] text-[var(--color-text-tertiary)]">{subtitle}</span>
+        )}
+        {tooltip && (
+          <span className="text-[10px] text-gray-400 cursor-help">ⓘ</span>
+        )}
       </div>
-      <div className={`text-2xl font-semibold tabular-nums ${highlight ? 'text-[var(--color-success)]' : ''}`}>
+      <div 
+        className={`text-2xl font-semibold tabular-nums ${highlight && !color ? 'text-[var(--color-success)]' : ''}`}
+        style={color ? { color } : undefined}
+      >
         {value}
       </div>
+      {tooltip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-64 text-center leading-relaxed shadow-lg">
+          {tooltip}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+        </div>
+      )}
     </div>
   );
 }
@@ -74,8 +117,8 @@ function HeroStat({
 function StatsSkeleton() {
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[...Array(6)].map((_, i) => (
           <div key={i} className="card p-4">
             <div className="skeleton h-3 w-16 mb-2" />
             <div className="skeleton h-8 w-12" />

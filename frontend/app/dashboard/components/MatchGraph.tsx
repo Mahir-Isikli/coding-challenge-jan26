@@ -3,8 +3,10 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { ZoomIn, ZoomOut } from 'lucide-react';
+import { supabase, isRealtimeConfigured } from '@/lib/supabase';
 import type { ForceGraphMethods, ForceGraphProps, NodeObject, LinkObject } from 'react-force-graph-2d';
+import { forceCollide, forceManyBody, forceRadial } from 'd3-force';
 
 // Graph data interfaces
 interface FruitAttributes {
@@ -32,6 +34,7 @@ interface GraphNodeData {
   name: string;
   attributes?: FruitAttributes;
   preferences?: FruitPreferences;
+  isMatched?: boolean;
 }
 
 interface GraphLinkData {
@@ -133,6 +136,9 @@ interface GraphData {
 interface GraphRefMethods {
   zoomToFit(ms?: number, padding?: number): void;
   zoom(level: number, ms?: number): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  d3Force(forceName: string, force?: any): any;
+  d3ReheatSimulation(): void;
 }
 
 // Dynamically import ForceGraph2D
@@ -152,6 +158,15 @@ const TypedForceGraph = forwardRef<
     zoom: (level: number, ms?: number) => {
       innerRef.current?.zoom(level, ms);
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    d3Force: (forceName: string, force?: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (innerRef.current as any)?.d3Force(forceName, force);
+    },
+    d3ReheatSimulation: () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (innerRef.current as any)?.d3ReheatSimulation();
+    },
   }));
 
   // Cast props to bypass generic inference issues with dynamic import
@@ -169,11 +184,39 @@ export function MatchGraph() {
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<GraphRefMethods>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch('/api/graph');
       const json = await res.json();
+      
+      // Assign initial positions based on match status
+      // Matched nodes at top, unmatched at bottom
+      // Spread horizontally with some randomness
+      const matchedNodes = json.nodes.filter((n: GraphNode) => n.isMatched);
+      const unmatchedNodes = json.nodes.filter((n: GraphNode) => !n.isMatched);
+      
+      // Position matched nodes in upper area with good spacing
+      matchedNodes.forEach((node: GraphNode, i: number) => {
+        const cols = Math.ceil(Math.sqrt(matchedNodes.length * 2));
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        const spacing = 120; // Increased spacing
+        node.x = (col - cols / 2) * spacing + (Math.random() - 0.5) * 30;
+        node.y = -150 + row * spacing + (Math.random() - 0.5) * 30;
+      });
+      
+      // Position unmatched nodes in lower area
+      unmatchedNodes.forEach((node: GraphNode, i: number) => {
+        const cols = Math.ceil(Math.sqrt(unmatchedNodes.length * 2));
+        const row = Math.floor(i / cols);
+        const col = i % cols;
+        const spacing = 100;
+        node.x = (col - cols / 2) * spacing + (Math.random() - 0.5) * 40;
+        node.y = 150 + row * spacing + (Math.random() - 0.5) * 40;
+      });
+      
       setData(json);
     } catch (error) {
       console.error('Failed to fetch graph data:', error);
@@ -184,6 +227,43 @@ export function MatchGraph() {
 
   useEffect(() => {
     fetchData();
+  }, [fetchData]);
+
+  // Subscribe to realtime match events to auto-refresh the graph
+  useEffect(() => {
+    if (!isRealtimeConfigured()) {
+      return;
+    }
+
+    // Prevent duplicate subscriptions
+    if (channelRef.current) {
+      return;
+    }
+
+    const channel = supabase.channel("matches", {
+      config: { broadcast: { self: true } },
+    });
+
+    channel
+      .on("broadcast", { event: "new_match" }, () => {
+        // Refetch graph data when a new match is created
+        console.log("[MatchGraph] New match detected, refreshing graph...");
+        fetchData();
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("[MatchGraph] Connected to realtime updates");
+        }
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [fetchData]);
 
   useEffect(() => {
@@ -231,18 +311,48 @@ export function MatchGraph() {
     graphRef.current?.zoomToFit(400, 40);
   }, []);
 
+  // Configure D3 forces for even spacing
+  useEffect(() => {
+    if (!graphRef.current || data.nodes.length === 0) return;
+    
+    // Strong collision to prevent overlap - this is key for even spacing
+    graphRef.current.d3Force('collision', forceCollide().radius(35).strength(1).iterations(4));
+    
+    // Strong repulsion between all nodes for even distribution
+    graphRef.current.d3Force('charge', forceManyBody().strength(-300).distanceMin(60).distanceMax(400));
+    
+    // Disable link force entirely - links shouldn't affect positions
+    // This way all nodes are evenly spaced regardless of connections
+    graphRef.current.d3Force('link', null);
+    
+    // Radial force to organize by type
+    graphRef.current.d3Force('radial', forceRadial<GraphNode>(
+      (node) => node.type === 'apple' ? 80 : 180,
+      0, 0
+    ).strength(0.8));
+    
+    // No center force - radial handles it
+    graphRef.current.d3Force('center', null);
+    
+    graphRef.current.d3ReheatSimulation();
+  }, [data]);
+
   const nodeColor = useCallback((node: GraphNode) => {
     return node.type === 'apple' ? '#ef4444' : '#f97316';
   }, []);
 
   const nodeCanvasObject = useCallback(
     (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      const label = node.type === 'apple' ? '🍏' : '🍊';
-      const fontSize = 16 / globalScale;
-      ctx.font = `${fontSize}px Sans-Serif`;
+      const emoji = node.type === 'apple' ? '🍏' : '🍊';
+      const x = node.x ?? 0;
+      const y = node.y ?? 0;
+      
+      // Draw emoji only - no labels to reduce clutter
+      const emojiSize = 24 / globalScale;
+      ctx.font = `${emojiSize}px Sans-Serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(label, node.x ?? 0, node.y ?? 0);
+      ctx.fillText(emoji, x, y);
     },
     []
   );
@@ -253,37 +363,13 @@ export function MatchGraph() {
       const end = link.target as GraphNode | undefined;
       if (!start || !end || typeof start !== 'object' || typeof end !== 'object') return;
 
-      const score = link.score ?? 0.5;
-      const alpha = 0.3 + score * 0.5;
-      ctx.strokeStyle = `rgba(120, 120, 120, ${alpha})`;
-      ctx.lineWidth = 1 / globalScale;
+      // All matches are 90%+ (dark green)
+      ctx.strokeStyle = 'rgba(22, 163, 74, 0.5)';
+      ctx.lineWidth = 1.5 / globalScale;
       ctx.beginPath();
       ctx.moveTo(start.x ?? 0, start.y ?? 0);
       ctx.lineTo(end.x ?? 0, end.y ?? 0);
       ctx.stroke();
-
-      const midX = ((start.x ?? 0) + (end.x ?? 0)) / 2;
-      const midY = ((start.y ?? 0) + (end.y ?? 0)) / 2;
-      const label = `${Math.round(score * 100)}%`;
-      // Base font size of 14px that scales with zoom (minimum 10px visual size)
-      const baseFontSize = 14;
-      const minVisualSize = 10;
-      const fontSize = Math.max(baseFontSize / globalScale, minVisualSize / globalScale);
-      ctx.font = `bold ${fontSize}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      // Draw background pill for better readability
-      const textMetrics = ctx.measureText(label);
-      const padding = 3 / globalScale;
-      const bgWidth = textMetrics.width + padding * 2;
-      const bgHeight = fontSize + padding * 2;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.beginPath();
-      ctx.roundRect(midX - bgWidth / 2, midY - bgHeight / 2, bgWidth, bgHeight, 3 / globalScale);
-      ctx.fill();
-      // Draw text
-      ctx.fillStyle = `rgba(80, 80, 80, ${0.7 + score * 0.3})`;
-      ctx.fillText(label, midX, midY);
     },
     []
   );
@@ -416,8 +502,17 @@ export function MatchGraph() {
 
   return (
     <div className="h-full w-full flex flex-col">
-      {/* Zoom Controls */}
-      <div className="flex justify-center py-2 border-b flex-shrink-0">
+      {/* Controls & Legend */}
+      <div className="flex items-center justify-between px-4 py-2 border-b flex-shrink-0">
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-0.5 bg-green-600 rounded-full" />
+            <span>90%+ match</span>
+          </div>
+        </div>
+        
+        {/* Zoom Controls */}
         <div className="inline-flex items-center rounded-md border bg-background">
           <Button
             variant="ghost"
@@ -430,12 +525,11 @@ export function MatchGraph() {
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="sm"
             onClick={handleFit}
-            className="rounded-none border-r"
-            title="Fit to View"
+            className="rounded-none border-r px-3 text-xs"
           >
-            <Maximize2 className="size-4" />
+            Fit to View
           </Button>
           <Button
             variant="ghost"
@@ -458,15 +552,17 @@ export function MatchGraph() {
           height={dimensions.height}
           nodeCanvasObject={nodeCanvasObject}
           nodeColor={nodeColor}
-          nodeRelSize={8}
+          nodeRelSize={12}
           linkCanvasObject={linkCanvasObject}
           linkCanvasObjectMode={() => 'replace'}
           backgroundColor="transparent"
-          cooldownTicks={100}
+          cooldownTicks={300}
+          warmupTicks={100}
           onEngineStop={handleEngineStop}
           onNodeClick={() => {}}
           nodeLabel={nodeLabel}
-          d3VelocityDecay={0.3}
+          d3VelocityDecay={0.2}
+          d3AlphaDecay={0.01}
         />
       </div>
     </div>
@@ -475,23 +571,51 @@ export function MatchGraph() {
 
 export function MatchGraphLegend() {
   const [counts, setCounts] = useState({ apples: 0, oranges: 0, matches: 0 });
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  const fetchCounts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/graph');
+      const json = (await res.json()) as GraphData;
+      setCounts({
+        apples: json.nodes.filter((n) => n.type === 'apple').length,
+        oranges: json.nodes.filter((n) => n.type === 'orange').length,
+        matches: json.links.length,
+      });
+    } catch (error) {
+      console.error('Failed to fetch graph data:', error);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const res = await fetch('/api/graph');
-        const json = (await res.json()) as GraphData;
-        setCounts({
-          apples: json.nodes.filter((n) => n.type === 'apple').length,
-          oranges: json.nodes.filter((n) => n.type === 'orange').length,
-          matches: json.links.length,
-        });
-      } catch (error) {
-        console.error('Failed to fetch graph data:', error);
+    fetchCounts();
+  }, [fetchCounts]);
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    if (!isRealtimeConfigured() || channelRef.current) {
+      return;
+    }
+
+    const channel = supabase.channel("matches", {
+      config: { broadcast: { self: true } },
+    });
+
+    channel
+      .on("broadcast", { event: "new_match" }, () => {
+        fetchCounts();
+      })
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
-    fetchCounts();
-  }, []);
+  }, [fetchCounts]);
 
   return (
     <div className="flex items-center justify-evenly text-sm text-muted-foreground w-full gap-6">

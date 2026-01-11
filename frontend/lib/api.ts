@@ -24,6 +24,42 @@ export interface IncomingFruitResponse {
   match: FruitMatch | null;
 }
 
+interface PreferenceSatisfaction {
+  score: number;
+  satisfied: string[];
+  violated: string[];
+}
+
+interface MatchBreakdown {
+  appleToOrange: PreferenceSatisfaction;
+  orangeToApple: PreferenceSatisfaction;
+}
+
+interface FruitMatchInfo {
+  matchId: string;
+  partnerId: string;
+  partnerName?: string;
+  score: number;
+  breakdown: {
+    myPrefsScore?: number;
+    theirPrefsScore?: number;
+    myPrefsSatisfied?: string[];
+    myPrefsViolated?: string[];
+    theirPrefsSatisfied?: string[];
+    theirPrefsViolated?: string[];
+  };
+  matchedAt?: string;
+}
+
+interface FruitBreakdownItem {
+  id: string;
+  type: string;
+  name: string;
+  matchCount: number;
+  bestMatch: FruitMatchInfo | null;
+  runnerUps: FruitMatchInfo[];
+}
+
 export interface MetricsResponse {
   metrics: {
     totalApples: number;
@@ -46,7 +82,12 @@ export interface MetricsResponse {
     orangeName?: string;
     score: number;
     matchedAt: string;
+    breakdown: MatchBreakdown;
   }>;
+  fruitBreakdown: {
+    apples: FruitBreakdownItem[];
+    oranges: FruitBreakdownItem[];
+  };
 }
 
 export interface SurrealQueryResponse<T> {

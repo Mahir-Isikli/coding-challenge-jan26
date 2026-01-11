@@ -87,14 +87,25 @@ export async function GET() {
     `);
     const matches = matchesResult[0] || [];
 
-    // Transform to graph format with full data for tooltips
-    const nodes = fruits.map(f => ({
-      id: f.id,
-      type: f.type,
-      name: f.name || f.id.split(':')[1] || f.id,
-      attributes: f.attributes,
-      preferences: f.preferences,
-    }));
+    // Build set of matched fruit IDs
+    const matchedIds = new Set<string>();
+    for (const m of matches) {
+      matchedIds.add(m.in);
+      matchedIds.add(m.out);
+    }
+
+    // Transform to graph format - only include fruits that have matches
+    // Unmatched fruits clutter the visualization
+    const nodes = fruits
+      .filter(f => matchedIds.has(f.id))
+      .map(f => ({
+        id: f.id,
+        type: f.type,
+        name: f.name || f.id.split(':')[1] || f.id,
+        attributes: f.attributes,
+        preferences: f.preferences,
+        isMatched: true,
+      }));
 
     const links = matches.map(m => ({
       source: m.in,
