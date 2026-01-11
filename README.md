@@ -6,6 +6,48 @@ Hey! Welcome to our little take home challenge. We won't force Leetcode problems
 
 But what and why are we building? Well, a lot of the world revolves around matchmaking. The fact that you and I exist is proof of that. A not so insignificant portion of what shapes a person's life is determined by matchmaking: friends, love, jobs. I mean hell, what we're doing right now at this very moment is matchmaking. Despite its prevalence, it is still quite the difficult task. So let's tackle it together—on a small scale at least. Our goal is to connect apples to oranges. Just because we shouldn't compare apples to oranges, doesn't mean we can't try to create a perfect pear… pair.
 
+## Quick Start
+
+```bash
+# 1. Clone and install dependencies
+git clone <repo-url>
+cd coding-challenge-jan26
+pnpm install
+cd frontend && pnpm install && cd ..
+
+# 2. Set up environment variables
+cp .env.example .env
+# Edit .env with your credentials (see Environment Variables section)
+
+# 3. Start the frontend
+cd frontend && pnpm dev
+```
+
+The app runs at http://localhost:3000. Edge functions are deployed to hosted Supabase.
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in:
+
+```bash
+# SurrealDB Cloud
+SURREAL_URL=wss://your-instance.surreal.cloud
+SURREAL_NAMESPACE=your-namespace
+SURREAL_DATABASE=your-database
+SURREAL_USER=root
+SURREAL_PASS=your-password
+
+# OpenAI (for embeddings)
+OPENAI_API_KEY=sk-...
+
+# Anthropic (for LLM match announcements)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Supabase (for edge functions & realtime)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+```
+
 ## Problem Statement
 
 The abstract idea of the project is simple. In one basket we have apples, each apple has preferences that it wishes its orange to fulfill. In another basket we have oranges, each orange obviously also has preferences that it wishes a potential apple to meet. Our job is to:
@@ -17,94 +59,109 @@ We're going to be creating a small fullstack application that will encompass eve
 
 ## Tech Stack
 
-Let me lay out the tech stack real quick before I get into more specifics.
+| Layer | Technology | Usage |
+|-------|------------|-------|
+| **Frontend** | Next.js 16, React 19, Tailwind CSS | App Router, UI components |
+| **State** | Zustand | Client-side state with persistence |
+| **Utilities** | Effect | Type-safe error handling, retries, timeouts |
+| **Backend** | Supabase Edge Functions | Deno runtime, hosted deployment |
+| **Database** | SurrealDB Cloud | Graph DB with vector search |
+| **Embeddings** | OpenAI | `text-embedding-3-small` for semantic matching |
+| **LLM** | Anthropic Claude | Match announcement generation |
 
-### Frontend
-- React
-- Next.js
-- Tailwind CSS
-- Zustand
-- Effect
+## Data Setup
 
-### Backend
-- Trigger.dev
-- Supabase Edge Functions
-- SurrealDB
+The `data/raw_apples_and_oranges.json` file contains 40 seed fruits (20 apples, 20 oranges) with attributes and preferences.
 
-### Agentic Components
-- AI SDK
+### Seeding the Database
 
-## Implementation Details
-
-### Data Setup
-
-In the `data` folder you will find a JSON file called `raw_apples_and_oranges.json`. It contains an array of apples and oranges with relevant attributes and their preferences. The first task is to create a SurrealDB instance that will hold this data. All design decisions regarding data storage are up to you, whatever helps achieve the goal best. This gives us our main pool of apples and oranges to draw from during the system's core cycle.
-
-### Core System
-
-Now that we have our data and access to it, we need to implement the core of our system. Two edge functions are provided: `get-incoming-apple` and `get-incoming-orange`. Both follow the same task flow:
-
-#### Task Flow
-
-1. **Generate a new fruit instance** ✅
-   - Uses `generateApple()` or `generateOrange()` from `_shared/generateFruit.ts`
-   - Attributes are randomly generated using a normal distribution
-   - Preferences are generated with relaxed constraints (not too strict)
-
-2. **Capture the fruit's communication** ✅
-   - `communicateAttributes(fruit)` - Returns a human-readable description of the fruit's physical characteristics
-   - `communicatePreferences(fruit)` - Returns a human-readable description of what the fruit is looking for in a match
-   - Both functions have extensive variability with multiple templates and phrasings
-
-3. **Store the new fruit in SurrealDB** ✅
-   - HTTP client (`_shared/surreal.ts`) connects to SurrealDB Cloud
-   - Fruit records stored with attributes, preferences, and description
-
-4. **Match the fruit to potential partners** ✅
-   - Bidirectional preference matching: does the orange satisfy the apple's preferences AND does the apple satisfy the orange's preferences?
-   - Combined score = average of both directions
-   - Returns top 5 ranked candidates with full breakdown
-
-5. **Communicate matching results via LLM** ✅
-   - Claude generates playful match announcements with preference details
-   - Streamed to the triggering panel, broadcast to the matched fruit's panel via Supabase Realtime
-
-#### Running the Backend Locally
+If starting fresh with a new SurrealDB instance:
 
 ```bash
-# Start Supabase local environment (from project root)
+# 1. Load raw data into SurrealDB (manual or via script)
+
+# 2. Generate embeddings for all fruits
+node scripts/seed-embeddings.mjs
+
+# 3. Create initial match relationships (optional)
+node scripts/batch-match.mjs --threshold=0.75
+```
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/seed-embeddings.mjs` | Generates OpenAI embeddings for all fruits in the database |
+| `scripts/batch-match.mjs` | Creates match relationships for fruit pairs above a score threshold |
+
+## Core System
+
+Two edge functions handle the matchmaking: `get-incoming-apple` and `get-incoming-orange`.
+
+### Task Flow
+
+1. **Generate a new fruit** - Random attributes via normal distribution, relaxed preferences
+2. **Store in SurrealDB** - With computed description and embedding
+3. **Bidirectional matching** - Score = avg(apple→orange satisfaction, orange→apple satisfaction)
+4. **LLM announcement** - Claude generates playful match messages
+5. **Realtime broadcast** - Results pushed to both panels via Supabase Realtime
+
+### Matching Algorithm
+
+```
+Combined Score = (Apple's preferences met by Orange + Orange's preferences met by Apple) / 2
+```
+
+Each preference is checked against actual attributes:
+- Range preferences: `{ min: 5, max: 10 }` → attribute must be in range
+- Exact preferences: `"shiny"` → attribute must match exactly
+- Boolean preferences: `true/false` → attribute must match
+
+### Running Edge Functions Locally
+
+```bash
+# Start Supabase local environment
 npx supabase start
 
-# Serve edge functions (in a separate terminal)
+# Serve edge functions
 npx supabase functions serve --no-verify-jwt
 
-# Test the functions
-curl http://127.0.0.1:54321/functions/v1/get-incoming-apple -H "Content-Type: application/json" -d '{}'
-curl http://127.0.0.1:54321/functions/v1/get-incoming-orange -H "Content-Type: application/json" -d '{}'
+# Test
+curl http://127.0.0.1:54321/functions/v1/get-incoming-apple -X POST
 ```
 
-#### Running the Frontend Locally
+## Frontend
 
-```bash
-# Navigate to frontend directory
-cd frontend
+### Pages
 
-# Install dependencies
-pnpm install
+- `/matchmaking` - Main interface with Apple Feed, Match Network graph, Orange Feed
+- `/dashboard` - Metrics: fruit counts, match stats, quality distribution, recent matches
 
-# Start the development server
-pnpm dev
+### Key Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `AppleChat` | `components/chat/` | Apple feed with "Add Apple" button |
+| `OrangeChat` | `components/chat/` | Orange feed with "Add Orange" button |
+| `MatchGraph` | `app/matchmaking/` | Force-directed graph of all matches |
+| `NavDock` | `components/layout/` | Navigation + "New Session" button |
+
+### State Management (Zustand)
+
+```typescript
+// lib/store.ts
+useMatchmakingStore.getState().addAppleFeedMessage(message)
+useMatchmakingStore.getState().clearAppleFeed()
 ```
 
-The frontend will be available at `http://localhost:3000`. The dashboard is at `/dashboard`.
+### Effect Usage
 
-### Visualization
-
-To tie it all together, you will create a visualization (you may choose the medium) of this flow. In other words, it should be possible for us to "start a new conversation" and visualize the resulting "conversation".
-
-### Metrics & Analytics
-
-Our goal is to match as best we can, but how do I know if our solution is any good? You tell me! In the frontend application, include an admin dashboard with metrics that you can track and help convince me that the system is performing well and we are creating great pears.
+```typescript
+// lib/utils.ts - Type-safe fetch with retries
+const result = await runEffect(
+  fetchWithRetry<MetricsResponse>('/api/metrics', {}, 3)
+)
+```
 
 ## Hard Requirements
 
@@ -112,54 +169,38 @@ Our goal is to match as best we can, but how do I know if our solution is any go
 - The communication between the system and the fruits need to be visualized in a medium of your choosing
 - You must communicate the matchmaking results through an LLM
 
-## Additional Notes
-
-- You may serve the edge functions locally.
-
-- We encourage you to utilize AI as you see fit throughout this challenge; seeing as you will need to build many aspects of the solution quickly. Regardless of how the code is created, you will be expected to own it. This ownership includes:
-  - Explaining all generated code
-  - Justifying all design decisions
-  - Displaying creativity in your solution
-
-- Also feel free to change anything and everything in the template. Just because someone wrote it, doesn't mean it is right or perfect. So let's hold each other accountable and call out anything we see to keep the collective quality up and solve the problem together.
-
 ## File Structure
 
 ```
-Root
 ├── frontend/                          # Next.js 16 application
 │   ├── app/
-│   │   ├── matchmaking/               # Main matchmaking page with chat panels
-│   │   ├── dashboard/                 # Admin dashboard with metrics
-│   │   └── api/chat/                  # API routes for LLM streaming
+│   │   ├── matchmaking/               # Main matchmaking page
+│   │   └── dashboard/                 # Admin dashboard
 │   ├── components/
-│   │   ├── chat/                      # AppleChat, OrangeChat components
+│   │   ├── chat/                      # AppleChat, OrangeChat
+│   │   ├── layout/                    # NavDock
 │   │   └── ui/                        # shadcn/ui components
 │   └── lib/
 │       ├── store.ts                   # Zustand state management
 │       ├── api.ts                     # Edge function API calls
-│       └── useRealtimeMatches.ts      # Supabase Realtime hook
+│       └── utils.ts                   # Effect-based utilities
 │
-├── supabase/
-│   ├── config.toml                    # Supabase local configuration
-│   └── functions/
-│       ├── _shared/
-│       │   ├── generateFruit.ts       # Fruit generation & communication
-│       │   ├── surreal.ts             # SurrealDB HTTP client
-│       │   └── ai.ts                  # OpenAI/Anthropic API clients
-│       ├── get-incoming-apple/        # Apple edge function
-│       ├── get-incoming-orange/       # Orange edge function
-│       └── get-metrics/               # Dashboard metrics endpoint
+├── supabase/functions/
+│   ├── _shared/
+│   │   ├── generateFruit.ts           # Fruit generation & communication
+│   │   ├── surreal.ts                 # SurrealDB HTTP client
+│   │   └── ai.ts                      # OpenAI/Anthropic clients
+│   ├── get-incoming-apple/            # Apple edge function
+│   ├── get-incoming-orange/           # Orange edge function
+│   └── get-metrics/                   # Dashboard metrics
 │
-├── scripts/                           # Utility scripts
-│   ├── seed-embeddings.mjs            # Generate embeddings for fruits
-│   ├── batch-match.mjs                # Create matches in bulk
-│   └── update-names-simple.mjs        # Update fruit naming
+├── scripts/
+│   ├── seed-embeddings.mjs            # Generate embeddings
+│   └── batch-match.mjs                # Bulk match creation
 │
 ├── data/
 │   └── raw_apples_and_oranges.json    # Seed data (40 fruits)
 │
-├── .env.example                       # Environment variables template
-├── package.json                       # Root dependencies (supabase CLI)
+├── .env.example                       # Environment template
 └── README.md                          # This file
 ```
