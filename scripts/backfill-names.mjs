@@ -4,11 +4,16 @@
  * Run with: node backfill-names.mjs
  */
 
-const SURREAL_URL = "https://clera-db-06dpv0t3mtv7j25egvjnmpaib8.aws-euw1.surreal.cloud";
-const SURREAL_NAMESPACE = "clera-namespace";
-const SURREAL_DATABASE = "clera-db";
-const SURREAL_USER = "root";
-const SURREAL_PASS = "clera-matchmaking-2024!";
+const SURREAL_URL = process.env.SURREAL_URL?.replace("wss://", "https://") || "https://clera-db-06dpv0t3mtv7j25egvjnmpaib8.aws-euw1.surreal.cloud";
+const SURREAL_NAMESPACE = process.env.SURREAL_NAMESPACE || "clera-namespace";
+const SURREAL_DATABASE = process.env.SURREAL_DATABASE || "clera-db";
+const SURREAL_USER = process.env.SURREAL_USER || "root";
+const SURREAL_PASS = process.env.SURREAL_PASS;
+
+if (!SURREAL_PASS) {
+  console.error("Error: SURREAL_PASS environment variable is required");
+  process.exit(1);
+}
 
 const APPLE_NAMES = [
   "Gala", "Fuji", "Honeycrisp", "Braeburn", "Pippin", "Granny", "Macintosh", "Jonagold",

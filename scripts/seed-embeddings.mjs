@@ -2,14 +2,23 @@
  * Generate embeddings for all existing fruits in SurrealDB
  */
 
-import { communicateAttributes, communicatePreferences } from './supabase/functions/_shared/generateFruit.ts';
+import { communicateAttributes, communicatePreferences } from '../supabase/functions/_shared/generateFruit.ts';
 
-const SURREAL_URL = "https://clera-db-06dpv0t3mtv7j25egvjnmpaib8.aws-euw1.surreal.cloud";
-const SURREAL_NAMESPACE = "clera-namespace";
-const SURREAL_DATABASE = "clera-db";
-const SURREAL_USER = "root";
-const SURREAL_PASS = "clera-matchmaking-2024!";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "REDACTED_OPENAI_KEY";
+const SURREAL_URL = process.env.SURREAL_URL?.replace("wss://", "https://") || "https://clera-db-06dpv0t3mtv7j25egvjnmpaib8.aws-euw1.surreal.cloud";
+const SURREAL_NAMESPACE = process.env.SURREAL_NAMESPACE || "clera-namespace";
+const SURREAL_DATABASE = process.env.SURREAL_DATABASE || "clera-db";
+const SURREAL_USER = process.env.SURREAL_USER || "root";
+const SURREAL_PASS = process.env.SURREAL_PASS;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+if (!SURREAL_PASS) {
+  console.error("Error: SURREAL_PASS environment variable is required");
+  process.exit(1);
+}
+if (!OPENAI_API_KEY) {
+  console.error("Error: OPENAI_API_KEY environment variable is required");
+  process.exit(1);
+}
 
 const authHeader = "Basic " + Buffer.from(`${SURREAL_USER}:${SURREAL_PASS}`).toString("base64");
 

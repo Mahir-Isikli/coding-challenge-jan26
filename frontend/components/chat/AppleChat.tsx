@@ -169,14 +169,8 @@ export function AppleChat() {
 }
 
 function useFormattedTime(timestamp: Date | string): string {
-  const [formatted, setFormatted] = useState("");
-  
-  useEffect(() => {
-    const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
-    setFormatted(date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-  }, [timestamp]);
-  
-  return formatted;
+  const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function MessageBubble({ message }: { message: FeedMessage }) {

@@ -588,7 +588,12 @@ export function MatchGraphLegend() {
   }, []);
 
   useEffect(() => {
-    fetchCounts();
+    let cancelled = false;
+    const load = async () => {
+      if (!cancelled) await fetchCounts();
+    };
+    load();
+    return () => { cancelled = true; };
   }, [fetchCounts]);
 
   // Subscribe to realtime updates

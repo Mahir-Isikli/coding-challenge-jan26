@@ -1,14 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 interface PreferenceSatisfaction {
   score: number;
@@ -73,7 +65,7 @@ function PreferenceBreakdown({ breakdown, appleName, orangeName }: {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[11px] text-[var(--color-text-tertiary)]">
-            🍎 {appleName}'s preferences met by {orangeName}
+            🍎 {appleName}&apos;s preferences met by {orangeName}
           </span>
           <span 
             className="text-[11px] font-mono font-medium"
@@ -109,7 +101,7 @@ function PreferenceBreakdown({ breakdown, appleName, orangeName }: {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[11px] text-[var(--color-text-tertiary)]">
-            🍊 {orangeName}'s preferences met by {appleName}
+            🍊 {orangeName}&apos;s preferences met by {appleName}
           </span>
           <span 
             className="text-[11px] font-mono font-medium"
