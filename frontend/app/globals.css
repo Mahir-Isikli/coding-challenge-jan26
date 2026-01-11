@@ -438,4 +438,15 @@ body {
   color: inherit !important;
   font: inherit !important;
   max-width: none !important;
+  outline: none !important;
+}
+
+/* Also target any inner tooltip elements */
+.float-tooltip-kap * {
+  outline: none !important;
+}
+
+.float-tooltip-kap > div {
+  border: none !important;
+  outline: none !important;
 }
