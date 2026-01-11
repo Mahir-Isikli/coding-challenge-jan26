@@ -64,33 +64,7 @@ const WEIGHT_MAX = 350;
 // Probability of each attribute being null (unknown)
 const NULL_PROBABILITY = 0.05;
 
-// Name pools for fruits (variety-inspired and fun names)
-const APPLE_NAMES = [
-  // Classic varieties
-  "Gala", "Fuji", "Honeycrisp", "Braeburn", "Pippin", "Granny", "Macintosh", "Jonagold",
-  "Cortland", "Ambrosia", "Crispin", "Empire", "Jazz", "Envy", "Opal", "Aurora",
-  "Pink Lady", "Cosmic", "Snapple", "Liberty", "Fortune", "Autumn", "Sunrise", "Golden",
-  "Ruby", "Scarlet", "Rosie", "Blossom", "Orchard", "Newton", "Cider", "Bramley",
-  "Spencer", "Baldwin", "Rome", "Winesap", "Cameo", "Kiku", "Smitten", "Rave",
-  "Sweetie", "Kanzi", "Rockit", "Pazazz", "Sugar Bee", "Evercrisp", "Juici", "Ludacrisp",
-  "Crimson", "Zestar",
-  // Fun & quirky names
-  "McLovin", "Crunchmaster", "Sir Crispington", "Johnny Appleseed", "Core Values", "Red Delicious Jr",
-  "Appleton", "Captain Crunch", "Snapdragon", "Wozniak", "Stemsworth", "Lady Macintosh",
-  "Gravity", "Big Apple", "Sparky", "Twinkle", "Harvest Moon", "Caramel Dream",
-  "Freckles", "Sunny Side", "Applejack", "Gingersnap", "Butterscotch", "Starlight",
-  "Meadow", "Clover", "Breezy", "Copper", "Maple", "Hazel"
-];
 
-const ORANGE_NAMES = [
-  "Valencia", "Navel", "Clementine", "Tangerine", "Satsuma", "Cara Cara", "Mandarin", "Seville",
-  "Jaffa", "Moro", "Sunny", "Zesty", "Marmalade", "Tang", "Julius", "Florida",
-  "Rio", "Coral", "Amber", "Goldie", "Blaze", "Sunset", "Tropicana", "Citrus",
-  "Bergamot", "Kumquat", "Pixie", "Murcott", "Minneola", "Tangelo", "Hamlin", "Pera",
-  "Salustiana", "Shamouti", "Midknight", "Delta", "Trovita", "Parson", "Pineapple", "Temple",
-  "Sunburst", "Dancy", "Honey", "Page", "Fairchild", "Fremont", "Nova", "Orlando",
-  "Lee", "Fallglo"
-];
 
 // ============================================================================
 // Random Utilities
@@ -815,11 +789,11 @@ interface DBClient {
 }
 
 /**
- * Generates a unique name for a fruit by checking existing names in the database.
- * Falls back to Name-XX suffix if all base names are taken.
+ * Generates a unique name for a fruit using simple ID format (Apple 0, Orange 1, etc.)
+ * Finds the next available number by checking existing names in the database.
  */
 export async function generateUniqueName(type: FruitType, db: DBClient): Promise<string> {
-  const namePool = type === "apple" ? APPLE_NAMES : ORANGE_NAMES;
+  const prefix = type === "apple" ? "Apple" : "Orange";
   
   // Query existing names of this fruit type from the database
   const existingResult = await db.query<Array<{ name: string }[]>>(`
@@ -827,26 +801,13 @@ export async function generateUniqueName(type: FruitType, db: DBClient): Promise
   `);
   const existingNames = new Set((existingResult[0] || []).map(r => r.name));
   
-  // Find available names from the pool
-  const availableNames = namePool.filter(name => !existingNames.has(name));
-  
-  if (availableNames.length > 0) {
-    // Pick a random available name
-    return randomPick(availableNames);
+  // Find the next available number
+  let num = 0;
+  while (existingNames.has(`${prefix} ${num}`)) {
+    num++;
   }
   
-  // All base names taken - generate with suffix
-  const baseName = randomPick(namePool);
-  let suffix = Math.floor(Math.random() * 100);
-  let candidateName = `${baseName}-${suffix.toString().padStart(2, "0")}`;
-  
-  // Keep trying until we find a unique one
-  while (existingNames.has(candidateName)) {
-    suffix = Math.floor(Math.random() * 1000);
-    candidateName = `${baseName}-${suffix.toString().padStart(3, "0")}`;
-  }
-  
-  return candidateName;
+  return `${prefix} ${num}`;
 }
 
 // ============================================================================
