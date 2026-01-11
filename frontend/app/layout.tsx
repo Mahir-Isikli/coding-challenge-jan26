@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { TabNav } from "@/components/layout/TabNav";
+import { NavDock } from "@/components/layout/NavDock";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,8 +32,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
         <div className="min-h-screen bg-[var(--color-bg)]">
-          <Header />
-          <TabNav />
+          <NavDock />
           {children}
         </div>
       </body>

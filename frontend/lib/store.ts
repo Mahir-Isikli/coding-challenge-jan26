@@ -112,22 +112,15 @@ interface MatchmakingState {
   reset: () => void;
 }
 
-const createWelcomeMessage = (): FeedMessage => ({
-  id: "welcome",
-  type: "system" as const,
-  content: "Ready. Add a fruit to start matching.",
-  timestamp: new Date(),
-});
-
 const initialState = {
   apples: [] as Apple[],
   oranges: [] as Orange[],
   matches: [] as Match[],
   conversations: [] as Conversation[],
   notifications: [] as MatchNotification[],
-  appleFeedMessages: [createWelcomeMessage()] as FeedMessage[],
-  orangeFeedMessages: [createWelcomeMessage()] as FeedMessage[],
-  feedMessages: [createWelcomeMessage()] as FeedMessage[],
+  appleFeedMessages: [] as FeedMessage[],
+  orangeFeedMessages: [] as FeedMessage[],
+  feedMessages: [] as FeedMessage[],
   activeConversationId: null,
   isLoading: false,
   error: null,
@@ -181,28 +174,10 @@ export const useMatchmakingStore = create<MatchmakingState>()(
           })),
 
         clearAppleFeed: () =>
-          set({
-            appleFeedMessages: [
-              {
-                id: "cleared-apple",
-                type: "system",
-                content: "Cleared.",
-                timestamp: new Date(),
-              },
-            ],
-          }),
+          set({ appleFeedMessages: [] }),
 
         clearOrangeFeed: () =>
-          set({
-            orangeFeedMessages: [
-              {
-                id: "cleared-orange",
-                type: "system",
-                content: "Cleared.",
-                timestamp: new Date(),
-              },
-            ],
-          }),
+          set({ orangeFeedMessages: [] }),
 
         // Legacy
         addFeedMessage: (message) =>
@@ -211,16 +186,7 @@ export const useMatchmakingStore = create<MatchmakingState>()(
           })),
 
         clearFeed: () =>
-          set({
-            feedMessages: [
-              {
-                id: "cleared",
-                type: "system",
-                content: "Cleared.",
-                timestamp: new Date(),
-              },
-            ],
-          }),
+          set({ feedMessages: [] }),
 
         setLoading: (isLoading) => set({ isLoading }),
 

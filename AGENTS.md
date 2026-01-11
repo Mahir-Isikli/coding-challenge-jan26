@@ -107,10 +107,17 @@ The frontend uses shadcn/ui components with a Linear-inspired design system:
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | Card, Badge, Button | `components/ui/` | Base shadcn components |
-| NavDock | `components/layout/` | Floating pill navigation |
+| NavDock | `components/layout/` | Floating pill navigation + "New Session" button |
 | AppleChat, OrangeChat | `components/chat/` | Split-panel chat interfaces |
 | QualityChart | `app/dashboard/components/` | CSS progress bars for match quality distribution |
 | RecentMatches | `app/dashboard/components/` | Card-style match list with mini progress bars |
+
+### Matchmaking Page
+
+The matchmaking page (`/matchmaking`) has:
+- **NavDock** with "New Session" button to clear both feeds
+- **Three-column layout**: Apple Feed | Match Network | Orange Feed
+- Consistent header/footer spacing with proper viewport clearance
 
 ### Dashboard Layout
 
