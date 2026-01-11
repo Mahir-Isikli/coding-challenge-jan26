@@ -1,8 +1,15 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Markdown } from "@/app/dashboard/components/Markdown";
 import { useMatchmakingStore, type FeedMessage } from "@/lib/store";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardAction } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Trash2 } from "lucide-react";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fwqoutllbbwyhrucsvly.supabase.co";
 
@@ -57,51 +64,91 @@ export function AppleChat() {
   };
 
   return (
-    <div className="card flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <div className="flex items-center gap-2">
-          <span>🍎</span>
-          <span className="text-sm font-medium">Apple Feed</span>
-          {isLoading && (
-            <span className="text-xs text-tertiary">(processing...)</span>
-          )}
+    <Card className="flex flex-col h-full py-0 gap-0">
+      <CardHeader className="px-4 py-3 flex items-center justify-center border-b flex-shrink-0">
+        <div className="flex items-center justify-between w-full">
+          <div className="w-8" />
+          <CardTitle className="text-sm flex items-center justify-center gap-2">
+            Apple Feed
+            {isLoading && (
+              <Badge variant="secondary" className="text-xs py-0 h-5">processing...</Badge>
+            )}
+          </CardTitle>
+          <Button variant="ghost" size="icon-sm" className="size-8" onClick={clearAppleFeed}>
+            <Trash2 className="size-4" />
+          </Button>
         </div>
-        <button
-          onClick={clearAppleFeed}
-          className="text-xs text-tertiary hover:text-secondary"
-        >
-          Clear
-        </button>
-      </div>
+      </CardHeader>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
-        {appleFeedMessages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
-        ))}
+      <CardContent className="flex-1 overflow-hidden p-0 flex flex-col">
+        {appleFeedMessages.length === 0 && !isLoading ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex items-center justify-center"
+            >
+              <Empty className="border-none">
+                <EmptyHeader>
+                  <span className="text-3xl">🍏</span>
+                  <EmptyTitle className="text-base">No apples yet</EmptyTitle>
+                  <EmptyDescription>
+                    Click the button below to add an apple and find a match
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <ScrollArea className="flex-1 p-4">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key="messages"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-3"
+              >
+                {appleFeedMessages.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <MessageBubble message={msg} />
+                  </motion.div>
+                ))}
 
-        {isLoading && (
-          <div className="flex items-center gap-2 text-sm text-tertiary">
-            <div className="loading-dots">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <span>Finding match...</span>
-          </div>
+                {isLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="loading-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <span>Finding match...</span>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </motion.div>
+            </AnimatePresence>
+          </ScrollArea>
         )}
-        <div ref={messagesEndRef} />
-      </div>
+      </CardContent>
 
-      <div className="px-4 py-3 border-t">
-        <button
-          onClick={handleNewApple}
-          disabled={isLoading}
-          className="btn btn-primary w-full"
+      <CardFooter className="px-4 py-4 border-t flex-shrink-0">
+        <Button 
+          onClick={handleNewApple} 
+          disabled={isLoading} 
+          className="w-full bg-[#4CAF50] hover:bg-[#43A047] text-white"
         >
           {isLoading ? "Adding..." : "Add Apple"}
-        </button>
-      </div>
-    </div>
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
 
